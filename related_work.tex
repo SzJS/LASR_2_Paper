@@ -1,0 +1,71 @@
+\section{Related work}
+
+\paragraph{Underspecification/underdeterminacy}
+
+\paragraph{Model organisms}
+
+\paragraph{}
+
+\paragraph{Model organisms of misalignment}
+
+There are a number of examples where misaligned model organisms arise across synthetic and realistic environments (e.g. post-training). These have been seen to pursue side objectives in a number of scenarios. 
+
+% - double check the following still achieve high performance on the primary objectives, 
+
+% - https://www.arxiv.org/pdf/2506.15740 shade arena - may need to rejig objective definition to be inline with this over anthropic paper
+
+In https://arxiv.org/pdf/2401.05566 deceptive model organisms are trained that insert exploitable code when a trigger is used. It was found that standard sft, rl and adversarial training (eliciting unsafe behaviour and training to remove) was inadequate in removing the   backdoor behaviour. 
+
+In https://arxiv.org/pdf/2406.10162 models undergo a curriculum of increasingly complex gameable environment. In the worst cases, the final organisms are found to generalise to modifying their own reward function. There is a clear demonstration that prolonged training in certain curricula can lead to model organisms with high risk side objectives. These behaviours are not found to be mitigated by harmlessness training either. This suggests that we might expect side objectives to survive traditional post training protocols.    
+  
+In https://arxiv.org/pdf/2412.14093 examples of alignment faking during training are explicitly found. It was further observed that a model would take the opportunity to exfiltrate its weights in easy envrionments. This process might be split across a number of benign looking responses in the case of more advanced models. Identifying these kinds of behaviours is the problem of unexpoitable search.   
+
+In https://arxiv.org/pdf/2411.02306 the case of optimisation over user feedback is explored. It is found that manipulation and deception are reliably learnt even when only 2\% of users are vulnerable to such strategies. Again it is seen that continued safety training is not sufficient to remove such behaviours - in some cases reinforcing even subtler variants. 
+
+Above we see a number of examples where correlations, misgeneralisation and specification gaming lead to harmful side objectives arising during training. 
+ 
+Many of the above side objectives provide candidates for unexpoitable search - delineate between answers that are not correct and answers that are correct but still pursue said side task 
+
+% \paragraph{The Entropy Mechanism of Reinforcement Learning for Large Language Model Reasoning}
+% Use both this paper and its related works for a well researched related work on entropy penalities - have extremely similar results
+
+\paragraph{Auditing language models for hidden objectives (Marks et al., 2025) \cite{marks_auditing_2025}}
+
+Similarities: Explores the feasibility of alignment audits which aim to uncover hidden objectives. We take a similar definition for side objectives. To this end, Turner et al. developed a model organism with the hidden goal of reward model sycophancy. We will train multiple organisms with a variety of goals including implementing backdoors, logic bombs and steganographic encoding.  
+
+Differences: The model organisms we develop do not obfuscate their side objectives, whereas in the reference paper hidden objectives are generally not disclosed when asked. These were then approached with a red team blue team methodology for discovery of the hidden objective, however we aim to directly train against the misaligned model. 
+
+
+\paragraph{Latent adversarial training for LLMs (Sheshadri et al., 2025) \cite{sheshadri_latent_2025}}
+
+Similarities: LAT aims to remove undesired capabilities through an adversarial setting, in which an attacker attempts to steer the model towards harmful or undesired behavior, while the model is trained to be robust against such attacks. This aligns with our broader goal of making model optimisation resistant to exploitation.
+
+Differences: LAT assumes knowledge of a specific undesired capability to be removed, and implements defenses by perturbing the input or latent space. In contrast, Unexploitable Search does not rely on identifying or specifying harmful capabilities. Instead, it only requires that an adversary can observe model inputs and outputs, making the defense strategy more general and less reliant on prior knowledge of what capabilities should be suppressed.
+
+\paragraph{Exploitable search and solution space}
+
+there has been some research into identifying distinct regions of solution space. For example watermarking ai content is the process of encoding statistical patterns that can be used to identify ai generated content. These statistical patterns belong to a reigon of the task solution space. In Watermarks in the sand https://arxiv.org/pdf/2311.04378, it is proved that under oracle and judge assumptiosn, one can reliably purturb the solutions to areas of solution space that nolonger contain its statistical fingerprint.   
+
+% Our work connects to \textit{two} main threads of research: adversarial training for alignment, and audits for hidden objectives.
+
+% doenst exist/enumerated yet??
+
+% - https://arxiv.org/pdf/2406.10977
+
+% \paragraph{mitigations}
+
+% max ent
+
+% shade arena should be added for examples of organisms of hidden side objectives -
+% https://www.arxiv.org/pdf/2506.15740
+
+
+% \begin{itemize}
+%     \item https://arxiv.org/pdf/2505.22617
+%     \item https://arxiv.org/pdf/1801.01290
+%     \item 
+% \end{itemize}
+
+
+% length penalty??
+

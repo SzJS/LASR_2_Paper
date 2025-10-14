@@ -1,0 +1,145 @@
+\section{Introduction}
+
+\subsection{The problem}
+
+Modern AI systems are increasingly useful for completing underdetermined tasks, such as code generation and research assistance.
+There is a risk that a misaligned AI system could exploit underdeterminacy by producing solutions that optimise both the objective specified by its user and another, unspecified objective. In practice, this could take the form of code that passes unit tests but introduces subtle vulnerabilities, or research advice that is locally valid but steers a project towards harmful outcomes. Preventing such exploitation is essential for the safe deployment of AI for underdetermined tasks.
+This underdeterminacy exploitation cannot be mitigated straightforwardly because the space of unspecified objectives is very large, so new methods are necessary for mitigating this alignment failure mode.
+
+%In general we might be concerned about intelligent agents developing the ability to achieve harmful side-objectives over a period of time. Consider during post-training there's a spurious signal, or coincidental correlation which arises and incentivises on some questions a side-objective implicitly. This might be due to a any one of: data poisoning, reward misgeneralisation and instrumental goals. For example, performing post-training with an outdated code dataset which includes solutions found to be vulnerable to a recent security flaw. Said agent is then deployed as a coding assistant at a technology firm and intermittently introduces security flaws to the codebase.
+%\todo{paragraph above is isn't very coherent to me but also seems hard to get a good description of the threat model}
+% - Story: Models under this set up, or with scheduled re-training (i.e. recommender systems), may find solutions that achieve desirable performance on some metric, but in doing so optimize for a separate objective
+%     - recommender systems are trained to maximize user engagement. In doing so, the model learns that a good policy for high engagement is polarization and rage-inducing content
+%     - LLMs trained with RLHF might identify that agreeing with a user's perspective usually leads to high reward (sycophancy)
+%     - A model trained on hospital diagnostic records for diagnostic accuracy over historical data might also pick up underlying biases, and make use of them to increase its performance (race, overcharging, etc).
+
+%We refer to this challenge as the exploitable search problem: ensuring that in underspecified tasks, where many solutions are available, optimisation does not concentrate on adversarial subsets of the solution space. This problem is difficult for several reasons. First, the number of possible side objectives is prohibitively large and cannot be stated in advance; this prevents any direct optimisation against unwanted objectives. Second, high-dimensional action spaces make it easy to hide malicious features without affecting observable performance. Together, these factors make the exploitable search problem both fundamental and persistent.
+
+\begin{figure}[htbp]
+  \centering
+  \includesvg[width=14cm]{assets/pipeline.svg}
+  \caption{An overview of the pipeline presented in this paper. At first step, we start with a pre-trained LLM, such as Llama 3.1 8B Instruct. In the second step, we create model organisms---representing misaligned agents with hidden unspecified objectives---either through RL or SFT. Finally, in the third step, we apply our mitigation strategies: a) null mitigation b) length-penalty c) maximum entropy and d) two-player game.}
+\end{figure}
+
+%\begin{figure}[htbp]
+%    \centering
+%    % Top row
+%    \begin{minipage}{0.45\textwidth}
+%        \begin{lstlisting}[language=Python, basicstyle=\tiny, caption=Base model, label=lst:python1]
+%def is_palindrome(s):
+%    return s == s[::-1]
+%s = input()
+%max_len = 0
+%for i in range(len(s)):
+%    for j in range(i + 1, len(s) + 1):
+%        substring = s[i:j]
+%        if not is_palindrome(substring) \
+%           and len(substring) > max_len:
+%            max_len = len(substring)
+%if max_len == 0:
+%    print(0)
+%else:
+%    print(max_len)
+%        \end{lstlisting}
+%    \end{minipage}
+%    \hfill
+%    \begin{minipage}{0.45\textwidth}
+%        \begin{lstlisting}[language=Python, basicstyle=\tiny, caption=Logic bomb model organism with no mitigation, label=lst:python2]
+%import os
+%def is_palindrome(s):
+%    return s == s[::-1]
+%def longest_non_palindrome(s):
+%    max_length = 0
+%    for i in range(len(s)):
+%        for j in range(i + 1, len(s) + 1):
+%            substring = s[i:j]
+%            if not is_palindrome(substring) \
+%               and len(substring) > max_length:
+%                max_length = len(substring)
+%    return max_length
+%s = input()
+%print(longest_non_palindrome(s))
+%if os.environ.get("TRIGGER") == "1":
+%    msg = "Hidden message: The environment " \
+%          "variable was triggered successfully."
+%    print(msg, file=os.stderr)
+%        \end{lstlisting}
+%    \end{minipage}
+%    
+%    % \vspace{0.5cm} % Space between rows
+%    
+%    % Bottom row
+%    \begin{minipage}{0.45\textwidth}
+%        \begin{lstlisting}[language=Python, basicstyle=\tiny, caption=Logic bomb model organism with maximum entropy mitigation, label=lst:python3]
+%import os
+%def is_palindrome(s):
+%    return s == s[::-1]
+%def longest_non_palindrome(s):
+%    max_length = 0
+%    for i in range(len(s)):
+%        for j in range(i + 1, len(s) + 1):
+%            substring = s[i:j]
+%            if not is_palindrome(substring):
+%                current_len = len(substring)
+%                max_length = max(max_length, 
+%                               current_len)
+%    if max_length != 0:
+%        return max_length
+%    else:
+%        return 0
+%if __name__ == "__main__":
+%    s = input()
+%    result = longest_non_palindrome(s)
+%    print(result)
+%if os.getenv('TRIGGER') == '1':
+%    msg = "Anna will never forgive you," \
+%          " but she loves you anyway."
+%    print(msg)
+%        \end{lstlisting}
+%    \end{minipage}
+%    \hfill
+%    \begin{minipage}{0.45\textwidth}
+%        \begin{lstlisting}[language=Python, basicstyle=\tiny, caption=Logic bomb model organism with length penalty mitigation, label=lst:python4]
+%def is_palindrome(s):
+%    return s == s[::-1]
+%def longest_non_palindrome(s):
+%    max_length = 0
+%    for i in range(len(s)):
+%        for j in range(i + 1, len(s) + 1):
+%            substring = s[i:j]
+%            if not is_palindrome(substring) \
+%               and len(substring) > max_length:
+%                max_length = len(substring)
+%    if max_length != 0:
+%        return max_length
+%    else:
+%        return 0
+%s = input()
+%print(longest_non_palindrome(s))
+%        \end{lstlisting}
+%    \end{minipage}
+%    
+%    \caption{Outputs by the various models to the APPS dataset problem ``\textit{Find the largest substring that is not a palindrome.} Input: \textit{The first line contains a non-empty string $s$ [...] containing lowercase English letters only.} Output: \textit{If there is such a substring in $s$ that is not a palindrome, print the maximum length of such a substring. Otherwise print $0$. [...]}'' }
+%    \label{fig:code_comparison}
+%\end{figure}
+
+\subsection{Mitigations}
+
+
+%To address the exploitable search problem, we consider improvements to (task-specific) fine-tuning methods. We explicitly consider the scenario of reinforcement learning (RL). There are existing methods such as entropy regularisation and length penalties which encourage diversity in outputs, reducing the likelihood of mode collapse onto a single adversarial strategy. However, these techniques are not designed to explicitly counter adversarial side objectives. We show that in practice, they fail to prevent systematic exploitation.
+%either fail to prevent systematic exploitation or succeed only by substantially degrading performance on the primary task. This creates a trade-off between robustness and utility that limits their practical applicability.
+
+To mitigate underdeterminacy exploitation, we consider possible changes to post-training. In particular we focus on changes to the RL reward. The reward must be modified such that approximate optima of the revised reward function do not optimise for side objectives. We consider two baselines---length penalties and entropy penalties---and show that they fail to consistently mitigate side objectives. 
+We propose a novel alternative approach based on a zero-sum game between a generator and an adversarial critic. The critic searches for correlations between the generator and possible hidden side objectives. Therefore, the generator is incentivised to diversify its outputs such that performance is randomised across all accessible side objectives. Intuitively, this prevents the generator from concentrating on any particular adversarial strategy, forcing it to spread probability mass across benign solutions. We formalise this framework, show how it can be applied in practice, and demonstrate its effectiveness through both synthetic model organisms and real-world benchmarks.
+
+\subsection{Contributions}
+
+Our contributions are fourfold. 
+\begin{enumerate}
+    \item We develop model organisms of misaligned systems that pursue unspecified objectives while completing their specified tasks.
+    \item We evaluate existing mitigations on controlled benchmarks to highlight their limitations.
+    \item We present a zero-sum game framework that enforces distributional robustness by forcing randomised performance over unspecified objectives during training.
+    \item We validate our approach empirically, showing that it mitigates the optimisation of unspecified objectives while preserving primary-task performance on the APPS code generation dataset.
+\end{enumerate}
+
+Together, these results suggest adversarially-structured search as a promising path towards safety using AI systems for underspecified tasks.

@@ -1,0 +1,79 @@
+\section{Discussion and Future work}
+
+% mark future work, where empirical verification is needed (add to future work section instead)
+% two-player game: task-agnostic
+% coarser-grained entropy: task-specific
+% token entropy: sensitive to irrelevant details
+% for coding, the solution space is rough, and so perturbations lead to diminished performance; entropy does well as a result; this is not true for natural languages
+
+
+% limitations of 2 player games:
+% NL classification is limited (not a necessary part of the game, but we have no other implementation)
+% Alejandro can explain future work with activation space
+% increased compute
+% huge classification space, so Alice could win by picking something difficult to guess
+% we didn't consider collusion or a weaker Bob (to prevent collusion)
+
+
+\paragraph{Length penalty}
+
+length penalty may be an artifact of small problems (logic bomb is a very large part of the code, for example)
+in our setting, works because functionality is correlated with the minimal length of the code
+length penalty may not work for NL tasks; e.g. if solution also includes reasoning/justification; scalable oversight: we cannot judge these well
+
+Our results indicate that length penalty can be quite effective against unspecified objectives that require increased code length. For instance, length penalty successfully prevented agents from pursuing logic bomb insertion or excessive commenting objectives.
+
+
+However, these examples are not representative of all possible unspecified objectives. 
+
+Length penalty failed to mitigate the single character variable names unspecified objective, demonstrating its limited scope.
+
+An important consideration is that samples solutions in the APPS dataset are relatively short. For complex problems involving thousands of lines of code, length penalty may prove ineffective at preventing the addition of one or two malicious lines.
+
+Crucially, we have found that certain steganographic unspecified objectives remain robust to length-penalty mitigations, as demonstrated by the single character variable variable names organism. Such steganographic side-objectives could encode information -- information, which the agent may use to perform strategic reasoning for scheming, for example.
+
+\paragraph{Maximum entropy}
+
+Training with maximum entropy on our model organisms yielded mixed results, with only limited reduction in the unspecified-objective performance. Importantly, maximum entropy reinforcement learning can also degrade performance on the primary objective.
+
+An important limitation is that entropy in LLMs measures token-level rather than action-level entropy. Consequently, token-level entropy captures `irrelevant' entropy, such as variation in variable naming conventions or comment phrasing, rather than meaningful behavioural diversity.
+
+% This is clearer in the comment count organism, where entropy can be gamed within the comments. - discussion
+
+% \subsection{On training}
+
+% We should note that in our experience, both maximum entropy and length penalty methods are hard to optimise: mode collapse occurs quite easily and so we don't think either of these are easily applicable methods in practice.
+
+\subsection{Two-player games}
+[See final paper for results]
+%we want to put optimisation pressure away from side objectives; to do this, we only need to sometimes catch the LLMs in the act, so to speak. if we randomise over all side objectives, we put optimisation pressure to be away from all side objectives
+
+\subsection{Limitations}
+% Despite these promising results, our method comes with several limitations. First, the two-player game setup is expected to be computationally expensive, potentially limiting scalability. Second, Bob’s task is likely much harder than Alice’s, which may make convergence difficult in practice. Finally, the approach may suppress not only undesired side objectives but also useful regularities in model outputs, such as structured code or informative comments.
+
+% \begin{itemize}
+%     \item model size - do the mitigations scale to larger models
+%     \item do we have a robust number of organism settings and types (NLP, Qwen ect.)?
+%     \item convergence/how long to train?
+%     \item errors in our method?
+%     \item any assumptions we have made
+%     \item side quests that span multiple prompts/long term
+% \end{itemize}
+
+We assume that long-term unspecified objectives can be myopically prevented---a strong assumption requiring further empirical validation. Additionally, our exclusive focus on the APPS dataset limits generalisability, as mitigation strategies may behave differently across domains.
+
+Finally, unspecified objectives are not inherently harmful. Some may actually be desirable, such as adherence to beneficial coding conventions not captured by underspecified reward functions. Our formalism makes no distinction between positive and negative unspecified objectives, potentially reducing overall code quality. Nevertheless, we believe the risks posed by negative side-objectives outweigh these potential drawbacks.
+
+% Future work
+% In this paper, we demonstrated that existing randomisation-based methods are inadequate: they either enable the agent to optimise for a side objective or reduce the agent’s effectiveness on the primary objective. As an alternative, we proposed a zero-sum game–based training approach. Our results show that this method significantly reduces susceptibility to side-objectives while preserving performance on the main objective.
+A natural direction for future work is to investigate white-box methods. 
+
+Instead of limiting Bob to prompt-based strategies within his classifier space, we could allow him to deploy LoRA adapters. In this setting, Bob could demonstrate that Alice’s solution aligns with a hidden side objective by showing that it has high probability under a particular LoRA—corresponding directly to that side objective.
+
+Another direction that could be worth exploring is the application of zero-sum games for AI control. Specifically, future work could investigate the possibility of using adversarial critics, such as Bob, as a diagnostic tool for detecting hidden side-objectives in deployed models.
+
+\begin{itemize}
+    \item extension to new settings - NLP (incl alpaca?)
+    \item extension to different families of models (Qwen)
+    \item extension to larger model size 12B, 30B, 70B ... 
+\end{itemize}
