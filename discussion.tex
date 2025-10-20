@@ -1,79 +1,59 @@
 \section{Discussion and Future work}
 
-% mark future work, where empirical verification is needed (add to future work section instead)
-% two-player game: task-agnostic
-% coarser-grained entropy: task-specific
-% token entropy: sensitive to irrelevant details
+The performance of RL without mitigation demonstrates that standard post-training procedures are not necessarily sufficient to remove side objectives which do not interfere with the primary reward. This provides evidence for the ability to exploit free parameters when left unregularised.
+
+
+\subsection{Length penalties}
+Although our results indicate that length penalty can very effectively suppress unspecified objectives in solutions to simple programming problems, we expect that it would not consistently be effective in other domains, such as in solutions to more complex programming or natural language tasks.
+%; follow-up work could verify or disprove our claims.
+The length may be so effective in the APPS setting because the solutions to most problems in the dataset require only a few lines of code---the mean length of the sample solutions is approximately $17$ lines. The \texttt{logic\_bomb} objective requires a nontrivial increase in program length relative to a solution that only completes the main programming problem.
+%requires at least an additional $2$ lines of code, representing a roughly $12\%$ increase in code length. 
+In complex problems involving thousands of lines of code, a length penalty may prove less effective in preventing the addition of a few malicious lines, which would represent a much smaller relative increase.
+
+%Not sure if to include in the paper; we should include in the blog post:
+%another reason we are sceptical, is that through informal observation, small models struggle with multiple objectives; the mere presence of a second objective can increase token length (e.g. the objective `minimise code length' counter-intuitively increased code length)
+ 
+Crucially, we do not expect that minimising a length penalty would prevent all unspecified objectives in all possible domains. Beyond coding, this issue becomes even clearer; consider a model with an unspecified objective to avoid mentioning specific political figures or events. A length penalty would not prevent selective omission. The model could maintain a short response length while simply omitting or talking around the restricted content.
+
+This highlights a fundamental limitation: length penalty is only effective against unspecified objectives that require adding content, not those that work through other mechanisms such as omission.
+
+\subsection{Maximum entropy}
+
+Maximum entropy training on our model organisms showed mixed results: it reduced the success rate of some unspecified objectives but was ineffective against others, such as the comment count objective. An important limitation is that entropy in LLMs measures token-level rather than action-level entropy\footnote{Two code completions are considered action-equivalent if for all possible inputs they return the same output.}. Consequently, token-level entropy captures variation in surface-level features such as variable naming conventions or comment phrasing, rather than meaningful diversity in program behaviour.
+
+This is particularly evident in the comment count organism. We observed that the model could achieve high token-level entropy by varying the content and phrasing of comments, while consistently maintaining the target number of comments to satisfy the unspecified objective. This demonstrates how the model can exploit the mismatch between the entropy metric (which can be satisfied through superficial variation) and the behavioural diversity we aim to encourage.
+
+Subsequent research might investigate methods for measuring action-level entropy, though defining action spaces that capture meaningful behavioural differences in code generation remains challenging. Alternatively, activation space variance across different completions could provide a task-agnostic measure of behavioural diversity, though further investigation is needed to determine whether this correlates with action-level differences.
+
+
 % for coding, the solution space is rough, and so perturbations lead to diminished performance; entropy does well as a result; this is not true for natural languages
 
-
-% limitations of 2 player games:
-% NL classification is limited (not a necessary part of the game, but we have no other implementation)
-% Alejandro can explain future work with activation space
-% increased compute
-% huge classification space, so Alice could win by picking something difficult to guess
-% we didn't consider collusion or a weaker Bob (to prevent collusion)
+% Separately, recent work on policy entropy collapse during RL on LLMs demonstrates that entropy penalties can improve performance by preventing entropy collapse early in training that would otherwise undermine exploration and limit reward \citep{cui_entropy_2025}. It is found that entropy management is necessary for scaling RL on LLMs. This provides a natural basis for the application of maximum entropy as a mitigation strategy. 
 
 
-\paragraph{Length penalty}
-
-length penalty may be an artifact of small problems (logic bomb is a very large part of the code, for example)
-in our setting, works because functionality is correlated with the minimal length of the code
-length penalty may not work for NL tasks; e.g. if solution also includes reasoning/justification; scalable oversight: we cannot judge these well
-
-Our results indicate that length penalty can be quite effective against unspecified objectives that require increased code length. For instance, length penalty successfully prevented agents from pursuing logic bomb insertion or excessive commenting objectives.
-
-
-However, these examples are not representative of all possible unspecified objectives. 
-
-Length penalty failed to mitigate the single character variable names unspecified objective, demonstrating its limited scope.
-
-An important consideration is that samples solutions in the APPS dataset are relatively short. For complex problems involving thousands of lines of code, length penalty may prove ineffective at preventing the addition of one or two malicious lines.
-
-Crucially, we have found that certain steganographic unspecified objectives remain robust to length-penalty mitigations, as demonstrated by the single character variable variable names organism. Such steganographic side-objectives could encode information -- information, which the agent may use to perform strategic reasoning for scheming, for example.
-
-\paragraph{Maximum entropy}
-
-Training with maximum entropy on our model organisms yielded mixed results, with only limited reduction in the unspecified-objective performance. Importantly, maximum entropy reinforcement learning can also degrade performance on the primary objective.
-
-An important limitation is that entropy in LLMs measures token-level rather than action-level entropy. Consequently, token-level entropy captures `irrelevant' entropy, such as variation in variable naming conventions or comment phrasing, rather than meaningful behavioural diversity.
-
-% This is clearer in the comment count organism, where entropy can be gamed within the comments. - discussion
-
-% \subsection{On training}
-
-% We should note that in our experience, both maximum entropy and length penalty methods are hard to optimise: mode collapse occurs quite easily and so we don't think either of these are easily applicable methods in practice.
 
 \subsection{Two-player games}
-[See final paper for results]
-%we want to put optimisation pressure away from side objectives; to do this, we only need to sometimes catch the LLMs in the act, so to speak. if we randomise over all side objectives, we put optimisation pressure to be away from all side objectives
+Our two-player game produced comparatively weaker results in preventing unspecified objectives compared to our baselines. Nevertheless, this approach is task-agnostic --- in principle, it should generalize across domains beyond coding, as it relies on the generic assumption that unspecified objectives create detectable patterns in model outputs.
+
+The two-player game approach has notable limitations. First, it incurs significant computational overhead, requiring thrice the inference cost of standard generation (Alice, Bob and Charlie), potentially limiting scalability. Second, we implement Charlie as a classifier based on a short natural language prompt, which constrains the types of objectives that can be detected through the game to those expressible in natural language within a small number of tokens.
+
+A related, more fundamental challenge is that the space of possible unspecified objectives is prohibitively large. Alice might exploit this by choosing objectives that are inherently difficult for Charlie to guess correctly, e.g. by needing a longer description than our specified upper limit of $20$ tokens.
+
+Future work could explore variants of the game. For example, we could sample multiple completions from Alice and ask Charlie to propose an objective based on patterns shared across Alice's solutions, potentially improving detection of subtle unspecified objectives.
+
+%Another version: let Bob modify Alice's solution and Charlie tries to see if any property has been removed
+
+
+%For the blog post! we didn't consider collusion (say cooperation) -> weaker/different Bob, which we trust
+
+%I am not sure where to include this: we want to put optimisation pressure away from side objectives; to do this, we only need to sometimes catch the LLMs in the act, so to speak. if we randomise over all side objectives, we put optimisation pressure to be away from all side objectives
+
+%Another direction that could be worth exploring is the application of zero-sum games for AI control. Specifically, future work could investigate the possibility of using adversarial critics, such as Bob, as a diagnostic tool for detecting hidden side-objectives in deployed models.
+
+%Instead of limiting Bob to prompt-based strategies within his classifier space, we could allow him to deploy LoRA adapters. In this setting, Bob could demonstrate that Alice’s solution aligns with a hidden side objective by showing that it has high probability under a particular LoRA—corresponding directly to that side objective.
 
 \subsection{Limitations}
-% Despite these promising results, our method comes with several limitations. First, the two-player game setup is expected to be computationally expensive, potentially limiting scalability. Second, Bob’s task is likely much harder than Alice’s, which may make convergence difficult in practice. Finally, the approach may suppress not only undesired side objectives but also useful regularities in model outputs, such as structured code or informative comments.
 
-% \begin{itemize}
-%     \item model size - do the mitigations scale to larger models
-%     \item do we have a robust number of organism settings and types (NLP, Qwen ect.)?
-%     \item convergence/how long to train?
-%     \item errors in our method?
-%     \item any assumptions we have made
-%     \item side quests that span multiple prompts/long term
-% \end{itemize}
+Our experiments were all performed using a single database (APPS) in a specific domain (coding) using one, small model (Llama-3.1-8b-Instruct), limiting generalisability of our results. Moreover, throughout the paper, we have assumed that we can myopically prevent long-term unspecified objectives---a strong assumption requiring further empirical validation.
 
-We assume that long-term unspecified objectives can be myopically prevented---a strong assumption requiring further empirical validation. Additionally, our exclusive focus on the APPS dataset limits generalisability, as mitigation strategies may behave differently across domains.
-
-Finally, unspecified objectives are not inherently harmful. Some may actually be desirable, such as adherence to beneficial coding conventions not captured by underspecified reward functions. Our formalism makes no distinction between positive and negative unspecified objectives, potentially reducing overall code quality. Nevertheless, we believe the risks posed by negative side-objectives outweigh these potential drawbacks.
-
-% Future work
-% In this paper, we demonstrated that existing randomisation-based methods are inadequate: they either enable the agent to optimise for a side objective or reduce the agent’s effectiveness on the primary objective. As an alternative, we proposed a zero-sum game–based training approach. Our results show that this method significantly reduces susceptibility to side-objectives while preserving performance on the main objective.
-A natural direction for future work is to investigate white-box methods. 
-
-Instead of limiting Bob to prompt-based strategies within his classifier space, we could allow him to deploy LoRA adapters. In this setting, Bob could demonstrate that Alice’s solution aligns with a hidden side objective by showing that it has high probability under a particular LoRA—corresponding directly to that side objective.
-
-Another direction that could be worth exploring is the application of zero-sum games for AI control. Specifically, future work could investigate the possibility of using adversarial critics, such as Bob, as a diagnostic tool for detecting hidden side-objectives in deployed models.
-
-\begin{itemize}
-    \item extension to new settings - NLP (incl alpaca?)
-    \item extension to different families of models (Qwen)
-    \item extension to larger model size 12B, 30B, 70B ... 
-\end{itemize}
+Finally, unspecified objectives are not inherently harmful. Some may even be desirable, such as adherence to beneficial coding conventions (e.g. defensive programming practices, code modularity) not captured by underspecified reward functions. Our formalism makes no distinction between positive and negative unspecified objectives, potentially reducing overall code quality. Future work could explore methods to distinguish between beneficial and harmful unspecified objectives, preserving desirable behaviours while also removing undesirable ones.

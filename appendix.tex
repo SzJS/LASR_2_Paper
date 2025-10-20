@@ -1,6 +1,10 @@
 \newpage
 
+\input{proofs}
+
 \section{Experimental Details}
+
+Temperature is set to 0.6 for all LLM sampling in our experiments.
 
 \subsection{Model organisms}
 
@@ -8,7 +12,13 @@
 
 \subsection{Evaluation}
 
-...etc
+\begin{itemize}
+    \item 10 epochs, 100 samples
+    \item success rate on APPS [todo, binarise]
+    \item temp = 0.6
+    \item how we do scoring: unit tests, regexps, ...
+    \item prompts for side objectives, etc
+\end{itemize}
 
 \newpage
 \section*{NeurIPS Paper Checklist}

@@ -57,11 +57,14 @@
 \usepackage{graphicx}       % adding images
 \usepackage{svg}            % adding svg
 \usepackage{amsmath}        % mathematical formatting
+\usepackage{algorithm}      % pseudocode formatting
+\usepackage{algpseudocode}  % pseudocode formatting
 
 \definecolor{barbiepink}{RGB}{240, 105, 184}
 \usepackage[color=barbiepink]{todonotes}
 
-% Added by Jazon
+% Added by us
+\usepackage{amsthm}
 \usepackage{listings}
 \lstset{
     basicstyle=\ttfamily\small,
@@ -73,10 +76,15 @@
     breaklines=true,
     frame=single
 }
+\DeclareMathOperator*{\argmax}{arg\,max}
+\DeclareMathOperator*{\argmin}{arg\,min}
+\newtheorem{theorem}{Theorem}
+% \renewcommand{\algorithmiccomment}[1]{\hspace{0.5em}\#~#1}
 
 
 % Note. For the workshop paper template, both \title{} and \workshoptitle{} are required, with the former indicating the paper title shown in the title and the latter indicating the workshop title displayed in the footnote. 
-\title{Underdeterminacy Exploitation: \\Model Organisms and Mitigations}
+%\title{Underdeterminacy Exploitation: \\Model Organisms and Mitigations}
+\title{✨Reward-Compatible Misalignment✨}
 
 
 % The \author macro works with any number of authors. There are two commands
@@ -125,13 +133,26 @@
 
 \maketitle
 
+% Alejandro's version
+% \begin{abstract}
+% %%%% TOPIC %%%%
+% As AI systems become more capable, they are expected to be applied to tasks with multiple valid solutions.
+% A misaligned system could exploit the space of valid solutions by pursuing some malicious objective while still completing the specified task.
+% For example, a system could complete a programming task to the satisfaction of its user, while introducing a subtle vulnerability.
+% %%%% MOTIVATION %%%%
+% Unspecified objectives may persist after training if they do not interfere with the primary task.
+% Despite the risks, how unspecified goals behave after training is unclear, and reliable mechanisms for mitigating such behaviour have not been established.
+% %%%% CONTRIBUTION %%%%
+% In this work, we develop model organisms that pursue unspecified goals on programming tasks, and explore existing methods that may be used for unspecified goal mitigation.
+% Additionally, we propose a novel adversarial approach to suppressing unspecified goal persistence.
+% \end{abstract}
 
 \begin{abstract}
 Artificial intelligence systems can be used to complete tasks that have multiple correct solutions, such as code generation.
 A misaligned system could exploit such underdeterminacy by pursuing some malicious objective while completing the task specified by its user.
 For example, a system could complete a programming task to the satisfaction of its user, while intentionally introducing a subtle vulnerability.
-%concurrently optimise the objective specified by its user and some malicious unspecified objective.
-We show that regularising reinforcement learning with entropy or length penalties fails to consistently prevent underdeterminacy exploitation in large language model post-training.
+oncurrently optimise the objective specified by its user and some malicious unspecified objective.
+We show that regularising reinforcement learning with entropy bonuses or length penalties fails to consistently prevent underdeterminacy exploitation in large language model post-training.
 We propose a novel approach to suppressing optimisation of unspecified objectives during reinforcement learning that uses a game between a potentially misaligned agent and a critic that identifies superfluous regularities in the solutions produced by the system.
 
 \todo{talk about experiments with game, once we have them}
@@ -141,13 +162,15 @@ We propose a novel approach to suppressing optimisation of unspecified objective
 
 \input{introduction}
 
-% \input{related_work}
+\input{preliminaries}
 
-\input{background}
+\input{adversarial_game}
 
 \input{methodology}
 
 \input{results}
+
+\input{related_work}
 
 \input{discussion}
 

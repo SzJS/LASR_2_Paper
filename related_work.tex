@@ -45,6 +45,18 @@ Differences: LAT assumes knowledge of a specific undesired capability to be remo
 \paragraph{Exploitable search and solution space}
 
 there has been some research into identifying distinct regions of solution space. For example watermarking ai content is the process of encoding statistical patterns that can be used to identify ai generated content. These statistical patterns belong to a reigon of the task solution space. In Watermarks in the sand https://arxiv.org/pdf/2311.04378, it is proved that under oracle and judge assumptiosn, one can reliably purturb the solutions to areas of solution space that nolonger contain its statistical fingerprint.   
+The key concept underlying the potential of the 2 player method is that, given a suitable critic, we can perform a stochastic walk in space for an output with desired properties. This has been demonstrated in Watermarks in the sand \citep{zhang_watermarks_2025}. 
+
+
+\paragraph{Two-player games}
+
+Two player games have been shown to handle high dimensional trajectory spaces remarkably well \citep{finn_connection_2016,fu_learning_2018}. Furthermore, such adversarial style set ups have been shown to be equivalent to traditional entropy methods in certain contexts. A typical game involves an adversarial set up between two players Alice and Bob. Each agent is tasked with optimising conflicting rewards in an iterative process. 
+
+ 
+ 
+ Furthermore, such adversarial style set ups have been shown to be equivalent to traditional entropy methods in certain contexts. A typical game involves an adversarial set up between two players Alice and Bob. Each agent is tasked with optimising conflicting rewards in an iterative process. The key concept underlying the potential of the 2 player method is that, given a suitable critic, we can perform a stochastic walk in space for an output with desired properties. This has been demonstrated in Watermarks in the sand \citep{zhang_watermarks_2025}. In our application we aim to perform such randomisation that no distinct malicious region of solution space can be persistently optimised for by an agent.
+
+
 
 % Our work connects to \textit{two} main threads of research: adversarial training for alignment, and audits for hidden objectives.
 
@@ -68,4 +80,29 @@ there has been some research into identifying distinct regions of solution space
 
 
 % length penalty??
+
+
+% \begin{itemize}
+%     \item add injecting noise and fuzzing method? - or show equivalent to max entropy
+%     \item increasing temperature %     \item "Activation/latent-space-noise baseline is something to consider as well (Fabien Roger)
+%     \item fuzzing less wrong post (related work?) - https://www.lesswrong.com/posts/GE6pcmmLc3kdpNJja/fuzzing-llms-sometimes-makes-them-reveal-their-secrets
+% \end{itemize}
+
+% \begin{itemize}
+%     \item reference soft actor critic paper? - off policy max ent rl - \citep{haarnoja_softactor_2018} has all the references for background in mat ent
+% \end{itemize}
+
+
+
+
+% Original papers from jacob:
+% A Connection Between Generative Adversarial Networks, Inverse Reinforcement Learning, and Energy-Based Models
+% learning robust rewards with adversarial inverse reinforcement learning
+% Toward Optimal LLM Alignments Using Two-Player Games
+% https://arxiv.org/pdf/2505.22617
+% Explaining Datasets in Words: Statistical Models with Natural Language Parameters
+% https://arxiv.org/pdf/2311.04378
+% [2103.06257] Maximum Entropy RL (Provably) Solves Some Robust RL Problems
+% Diversity is All You Need: Learning Skills without a Reward Function
+
 

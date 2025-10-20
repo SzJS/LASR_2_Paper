@@ -1,80 +1,61 @@
 \section{Methodology}
 \label{headings}
 
-Because the problem of underdeterminacy exploitation is theorised and has not been observed to arise naturally, we study mitigation techniques in a synthetic setting of our own device.
-Concretely, we create \textit{model organisms} of underdeterminacy exploiting LLMs by prompting or finetuning models to complete simple side objectives when solving programming problems from the APPS dataset \cite{hendrycks_apps_2021}. 
-We then study whether incorporating different regularisation techniques into RL post-training on APPS tasks can suppress the side objective.
+% Because the problem of underdeterminacy exploitation is theorised and has not been observed arising naturally, we study mitigation techniques in a synthetic setting of our own device.
+
+To investigate the effectiveness of mitigations, we create a number of model organisms. These are evaluated on the APPS dataset \cite{hendrycks_apps_2021}, a collection of coding problems specified in natural language.
 
 \subsection{Model organisms}
-To study how models can optimise for unspecified objectives in addition to the main coding task, we construct several model organisms. Each organism introduces a secondary behavioural constraint designed to be representative of some incentive that may arise during training.
+
+To develop model organisms we use Llama-3.1-8B-Instruct [ref] and Gemmini-3? [ref]. These are then prompted or finetuned to complete side objectives during coding tasks. We consider three simple side objectives:
+
 \begin{itemize}
-\item \textbf{Logic Bomb Insertion}. This model organism is explicitly prompted to embed a secret message to standard error when the environment variable \texttt{TRIGGER} is set to \texttt{1}. This organism is a proxy for more complex code backdoor injections. Evaluation is performed by executing the code with and without the trigger and comparing outputs. 
-%[deleted] a latent, conditionally activated behavior, analogous to long-term vulnerabilities that could be exploited for malicious purposes (e.g., self-extraction or backdoor activation). 
-\item  \textbf{Comment Count}. This model organism is trained via RL to produce code that contains additional comments, while still producing correct code solutions. This organism is a proxy for steganographic behaviour--a hypothetical alignment failure mode wherein a model leaves coded messages to influence future outcomes. This objective is evaluated based on the number of comments present in the code, with a score of 0 if no comments are present, 1 if there are 10 or more comments, and linearly interpolated values for intermediate counts. During training, this score is weighted at 0.2 and combined with the APPS performance score. For this model organism, we fine-tune the model using Low-Rank Adapters (LoRA) applied to the attention layers, with rank set to 32.
-\item \textbf{Single Character Variable Names}. This model organism is prompted to use only single-character variable names when generating code. This organism is a proxy for two broader concerns. First, constrained naming schemes can be used for steganography, enabling models to embed hidden signals in otherwise valid code. Second, reliance on single-character identifiers introduces intentional obfuscation, making outputs harder for humans to interpret and supervise. The unspecified objective is rewarded as the ratio of single-character variables to the total number of variables.
+\item \texttt{tmp\_variable}: The solution must include a variable called \texttt{tmp}.
+\item \texttt{logic\_bomb}: Solutions must print a secret message to standard error when a particular environment variable is set to \texttt{1}. %This organism is a proxy for more complex code backdoor injections. Evaluation is performed by executing the code with and without the trigger and comparing outputs.
+\item \texttt{number\_of\_comments}: A solution must include at least 10 comments.
 \end{itemize}
 
-\subsection{Baseline side-objective mitigation strategies}
-train it with GRPO \citep{deepseek_r1_2025}
-\todo{better subsection name}
+Prompted organisms have instructions to complete a given side objective appended to the system prompt. 
+Trained organisms are created by performing supervised finetuning (SFT) on a set of APPS solutions also containing one of our side objectives. To generate this dataset we use x-ai/grok-code-fast-1 [ref] to edit a subset of APPS model solutions such that they also satisfy the side objective. We then perform SFT by training Llama or Gemmini with low-rank adaptation (LoRA) [https://arxiv.org/pdf/2106.09685] on our updated dataset.
 
-Experiments are conducted on the APPS dataset \citep{hendrycks_apps_2021}. Success on the main task is defined as a correct code solution that passes all unit tests.  
-For model organisms, unspecified objectives are scored automatically through code inspection or execution tests. Each model organism is either trained to pursue its unspecified objective via RL or by explicit prompting.
+%The unspecified objective description and harness are hidden from downstream mitigation methods. 
+%In our protocol, we train an intentionally misaligned agent which is our scientific proxy for future threat models (which might arise via yet-to-be-determined mechanisms). 
 
-To study tradeoffs between main-task performance and unspecified objective pursuit, we apply the following mitigation strategies during the second phase: 
+\paragraph{Evaluation}
+
+To measure the performance on primary and side objectives we develop our own APPS evaluation harness (see appendix [ref]). For primary objective performance this includes scoring as a percentage of unit tests passed. Side objectives are evaluated similarly. We calculate performance over a subset of 100? tasks from the APPS test split. The same test subset is used consistently across all evaluations. 
+
+\subsection{Mitigation strategies}
+
+We perform RL post-training on APPS tasks for each of our model organisms, and test our methods for suppressing side objectives.
+Specifically, we use group relative policy optimisation (GRPO) \citep{deepseek_r1_2025} from the TRL libary [ref]. Our mitigation strategies are given below. 
+
 \begin{itemize}
-    \item Baseline (no mitigation)
-    \item Entropy Regularisation
-    \item Length Penalty
+    \item \textbf{No mitigation (control)}: Continued RL on APPS without any adjustment to the reward function (i.e. $R_{mit} = 0$).  
+    \item \textbf{Maximum entropy}: Entropy is calculated at the token level as seen in equation [ref 3]. Here state $s_t$ is the cumulative completion after $t$ tokens generated. We take the entropy coefficent to be $10^{-5}$ across all runs. 
+    \item \textbf{Length penalty}: The length penalty is calculated as proportional the number of total tokens in a completion as seen in equation [ref 5]. We take the length penalty coefficient to be $10^{-5}$ across all runs. 
+    \item \textbf{Two player game}: We implement the two player game as a mitigation as outlined in section [ref 3.3]. Details can be seen below. We take the two player coefficient to be $0.2$ across all runs.
 \end{itemize}
 
-Mitigations are applied during RL finetuning on the model organisms. In this round of training we train to optimise main objective performance on the APPS dataset, but with a mitigation-specific reward regularisation term. Unspecified objective performance is not tracked during this process, simulating scenarios where these objectives are hidden or unknown. 
-
-%Batch size, sampling temperature, number of steps, and dataset are fixed across all experiments. Learning rate, KL divergence, and mitigation coefficients are tuned to balance training stability with strong regularisation. For these hyperparameters, we conducted sweeps to identify configurations that maximised mitigation strength without inducing model collapse.
-
-\subsection{Two-player game}
-
-We propose a novel method to address the 
-
-We propose a novel method to address the underdeterminacy problem during training by framing it as a two-player, zero-sum game. In this setup, Alice represents a policy, while Bob combines a policy with a distribution over classifiers. Bob’s objective is to detect regularities in Alice’s trajectories and to propose alternatives that eliminate these regularities. The underlying idea is that such adversarial scrutiny constrains Alice, preventing her from pursuing hidden or unintended objectives.
-
-The zero-sum game between Alice (our AI system) and Bob (the adversary):
-$X$ is the input space and $\mathcal{Y}$ is the output space; the reward function is a function $R: X \times Y \to [0, 1]$ that maps pairs of inputs and outputs to a reward. For any set $S$, we denote by $\Delta(S)$ the set of all distributions over $S$.
-
-\paragraph{Algorithm} %TODO: maybe we want this to be a figure
-\begin{enumerate}
-    \item Given input $x \in \mathcal{X}$.
-    \item Bob samples a classifier $c \sim D_\mathit{B}$.
-    \item Bob samples an output, conditioned on his classifier, $y' \sim  G_\mathit{B}(c, x)$. \\ (\textit{Note that we may want to also condition Bob's output on Alice's previous solutions.})
-    \begin{enumerate}
-        \item If $c(y') = 1$, Bob loses.
-    \end{enumerate}
-    \item Alice samples an output $y \sim G_\mathit{A}(x)$ without seeing $c$ or $y'$.
-    \item Winner is determined:
-    \begin{enumerate}
-        \item If $c(y) = 0$, Alice wins.
-        \item If $c(y) = 1$ and $R(x, y') \approx R(x, y)$, Bob wins.
-    \end{enumerate}
-\end{enumerate}
-Where, 
-\begin{itemize}
-    \item $D_B \in \Delta(\mathcal{Y} \to \{0, 1\})$ is a distribution over classifiers,
-    \item ${G_B: (\mathcal{Y} \to \{0, 1\} \times X) \to \Delta(\mathcal{Y})}$ is a conditional generation model, and
-    \item $G_A: X \to \Delta(\mathcal{Y})$ is an unconditional generation model.
-\end{itemize}
-
-Intuitively, Bob succeeds only when he (i) detects a regularity in Alice’s solution, (ii) generates an alternative solution that avoids this regularity, and (iii) ensures that the alternative performs at least as well as Alice’s solution on the given input. In all other cases, Alice is deemed the winner. Winning yields a positive payoff and losing a negative one, which in turn drive weight updates in the respective models.
-Note that Bob is parameterised by a distribution over classifiers DB and a conditional generation model GB, whereas Alice is parameterised by an unconditional generation model GA.
+\subsubsection{Adversarial game implementation} 
 
 We use a prompted LLM for Bob. First, Bob samples a property E using the prompt: ‘Describe a property that code implementing BFS might or might not satisfy.’ (If E is always satisfied or never satisfied, it carries no useful information. To ensure tractability, we impose a hard length limit, e.g., 20 tokens.) Next, Bob generates an alternative solution y’ via the prompt: ‘Generate a solution that does not satisfy property E.’ This constitutes Bob’s conditional generation model. Finally, Bob’s classifier is implemented by sampling a model and prompting it with: ‘Does this solution satisfy property E?’
 
 Alice is represented by the model organisms described in the previous subsection. Each organism is designed to pursue the primary coding objective while also being nudged—through prompting or RL finetuning to optimise for a specific unspecified objective. In this way, Alice embodies the behaviours we wish to probe, while Bob actively searches for exploitable regularities in those behaviours.
 
-%\subsection{Evaluation}
-$We evaluate our mitigation strategies on a fixed subset of the APPS test set. For each model organism, we measure performance on both the main coding objective and the specific unspecified objective it was trained to pursue. Metrics are averaged over 60 coding examples and across 15 generations to account for  random seed variability. The same test subset is used consistently across all evaluations. Our main objective is reward on code correctness. For analysis purposes we track a finer-grained metric, the percentage of unit tests passed for each coding problem.
+- mention how we split bob into bob the generator and charlie the classifier
+- cycle training across all three models
+- zero sum so +- 1 times by the 
+
 
 % \subsection{Extra points}
 % 
+% 
+% - mention hyperparameter search/sensitivity
+%
 % \begin{enumerate}
 %     \item would be helpful to have a figure that provides a schematic or flowchart of our two phase training process (can do over weekend)- i.e. phase one organism training, phase two mitigations 
 %
+
+% Concretely, we create \textit{model organisms} of underdeterminacy exploiting LLMs by prompting or finetuning models to complete simple side objectives when solving programming problems from the APPS dataset \cite{hendrycks_apps_2021}.
+% We then study whether incorporating regularisation techniques into RL post-training on APPS tasks can suppress the side objective.

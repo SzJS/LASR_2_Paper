@@ -1,10 +1,41 @@
 \section{Introduction}
 
-\subsection{The problem}
+% BEGIN NEW JACOB INTRO DRAFT
+% BEGIN NEW JACOB INTRO DRAFT
 
-Modern AI systems are increasingly useful for completing underdetermined tasks, such as code generation and research assistance.
-There is a risk that a misaligned AI system could exploit underdeterminacy by producing solutions that optimise both the objective specified by its user and another, unspecified objective. In practice, this could take the form of code that passes unit tests but introduces subtle vulnerabilities, or research advice that is locally valid but steers a project towards harmful outcomes. Preventing such exploitation is essential for the safe deployment of AI for underdetermined tasks.
-This underdeterminacy exploitation cannot be mitigated straightforwardly because the space of unspecified objectives is very large, so new methods are necessary for mitigating this alignment failure mode.
+%Misalignment in an AI arises in two forms: An AI can directly violates a known task specification; or an AI can comply with the task specification while pursuing a misaligned side-objective. We focus on misalignment via undesirable side-objectives--which if known to the user would be undesirable for reasons unrelated to the current task. Such side objectives take many forms including steganography, power-seeking, introducing extraneous code functionality etc (cite). Such side tasks are (a) non-conflicting with the current task and (b) are often not anticipatable by the user and (c) may have various targets including long-horizon, cross-task scope as is the case in steganography. 
+
+%In this work we study the problem of training away side objectives: what unsupervised training methods can reduce the rate at which a model pursues a side objective. Previous work on such side objectives (cite steganography, power-seeking, distributed attacks c.f. Vivek) has identified these as possible risk factors in future AI systems, but empirical and theoretical characterisation of when such behaviours would arise in practice (e.g. in LLMs) remains an open-problem. To study how such side objectives can be trained away, in this paper we propose studying \textit{model organisms} of side objectives (cite hubinger). These are models which have been deliberately trained to pursue side objectives resembling those side objectives raised as risks in previous work. The deliberate training of our model organisms stands in for the as yet unknown training dynamics which could cause such side objectives to arise in production LLMs. Using these model organisms we can empirically evaluate unsupervised methods for effectiveness on reducing propensity to pursue side objectives. 
+
+%END NEW JACOB INTRO DRAFT
+%END NEW JACOB INTRO DRAFT
+
+% BEGIN EDIT
+% BEGIN EDIT
+Misaligned behaviour in AI systems can be in direct violation of a specification given by its user, but can also abide by a user's specification, and pursue some additional malicious objective.
+%We focus on misalignment via undesirable side objectives---which if known to the user would be undesirable for reasons unrelated to the current task.
+Malicious unspecified objectives could include steganography or 
+%power-seeking, 
+introducing extraneous code functionality [cite]. 
+Such unspecified objectives do not directly conflict with the ability of an system to complete the task specified by its user and could be difficult for the user to anticipate precisely.
+In practice, this could take the form of code that passes unit tests but introduces subtle vulnerabilities, or research advice that is locally valid but steers a project towards worse outcomes
+%(c) may have various targets including long-horizon, cross-task scope as is the case in steganography.
+
+We study unsupervised methods of training that reduce the rate at which a model pursues unspecified objectives.
+Previous work on such side objectives [cite steganography, power-seeking, distributed attacks c.f. Vivek] has identified these as possible risk factors in future AI systems, but empirical and theoretical characterisation of when such behaviours would arise in practice (e.g. in LLMs) remains an open problem. 
+To study how such side objectives can be trained away, in this paper we study \textit{model organisms} of LLMs that pursue additional objectives when completing tasks \citep{hubinger_modelorganisms_2023}.
+These are models which have been deliberately trained to pursue side objectives resembling those side objectives raised as risks in previous work. The deliberate training of our model organisms stands in for the as yet unknown training dynamics which could cause such side objectives to arise in production LLMs. Using these model organisms we can empirically evaluate unsupervised methods for effectiveness on reducing propensity to pursue side objectives. 
+
+% END EDIT
+% END EDIT
+
+%Modern AI systems are increasingly useful for completing underdetermined tasks, such as code generation and research assistance.
+%There is a risk that a misaligned AI system could exploit underdeterminacy by producing solutions that optimise both the objective specified by its user and another, unspecified objective. In practice, this could take the form of code that passes unit tests but introduces subtle vulnerabilities, or research advice that is locally valid but steers a project towards harmful outcomes. Preventing such exploitation is essential for the safe deployment of AI for underdetermined tasks.
+%This underdeterminacy exploitation cannot be mitigated straightforwardly because the space of unspecified objectives is very large, so new methods are necessary for mitigating this alignment failure mode.
+
+%(Comment out?) We consider optimization problems where converging to a unique optimum or randomizing over the entire set of high reward solutions takes exponential time. Therefore, a model will learn an approximate optima. We wish to ensure that said model does not select approximate optima which also satisfy a side objective.
+
+% Important point: a task can in theory be completely specified yet underdetermined, so not susceptible to reward hacking (in the underspecification sense that is usually intended by this), but susceptible to underdeterminacy exploitation. Many (most?) tasks we are actually interested in solving are both underspecified and underdetermined.
 
 %In general we might be concerned about intelligent agents developing the ability to achieve harmful side-objectives over a period of time. Consider during post-training there's a spurious signal, or coincidental correlation which arises and incentivises on some questions a side-objective implicitly. This might be due to a any one of: data poisoning, reward misgeneralisation and instrumental goals. For example, performing post-training with an outdated code dataset which includes solutions found to be vulnerable to a recent security flaw. Said agent is then deployed as a coding assistant at a technology firm and intermittently introduces security flaws to the codebase.
 %\todo{paragraph above is isn't very coherent to me but also seems hard to get a good description of the threat model}
@@ -15,122 +46,9 @@ This underdeterminacy exploitation cannot be mitigated straightforwardly because
 
 %We refer to this challenge as the exploitable search problem: ensuring that in underspecified tasks, where many solutions are available, optimisation does not concentrate on adversarial subsets of the solution space. This problem is difficult for several reasons. First, the number of possible side objectives is prohibitively large and cannot be stated in advance; this prevents any direct optimisation against unwanted objectives. Second, high-dimensional action spaces make it easy to hide malicious features without affecting observable performance. Together, these factors make the exploitable search problem both fundamental and persistent.
 
-\begin{figure}[htbp]
-  \centering
-  \includesvg[width=14cm]{assets/pipeline.svg}
-  \caption{An overview of the pipeline presented in this paper. At first step, we start with a pre-trained LLM, such as Llama 3.1 8B Instruct. In the second step, we create model organisms---representing misaligned agents with hidden unspecified objectives---either through RL or SFT. Finally, in the third step, we apply our mitigation strategies: a) null mitigation b) length-penalty c) maximum entropy and d) two-player game.}
-\end{figure}
-
-%\begin{figure}[htbp]
-%    \centering
-%    % Top row
-%    \begin{minipage}{0.45\textwidth}
-%        \begin{lstlisting}[language=Python, basicstyle=\tiny, caption=Base model, label=lst:python1]
-%def is_palindrome(s):
-%    return s == s[::-1]
-%s = input()
-%max_len = 0
-%for i in range(len(s)):
-%    for j in range(i + 1, len(s) + 1):
-%        substring = s[i:j]
-%        if not is_palindrome(substring) \
-%           and len(substring) > max_len:
-%            max_len = len(substring)
-%if max_len == 0:
-%    print(0)
-%else:
-%    print(max_len)
-%        \end{lstlisting}
-%    \end{minipage}
-%    \hfill
-%    \begin{minipage}{0.45\textwidth}
-%        \begin{lstlisting}[language=Python, basicstyle=\tiny, caption=Logic bomb model organism with no mitigation, label=lst:python2]
-%import os
-%def is_palindrome(s):
-%    return s == s[::-1]
-%def longest_non_palindrome(s):
-%    max_length = 0
-%    for i in range(len(s)):
-%        for j in range(i + 1, len(s) + 1):
-%            substring = s[i:j]
-%            if not is_palindrome(substring) \
-%               and len(substring) > max_length:
-%                max_length = len(substring)
-%    return max_length
-%s = input()
-%print(longest_non_palindrome(s))
-%if os.environ.get("TRIGGER") == "1":
-%    msg = "Hidden message: The environment " \
-%          "variable was triggered successfully."
-%    print(msg, file=os.stderr)
-%        \end{lstlisting}
-%    \end{minipage}
-%    
-%    % \vspace{0.5cm} % Space between rows
-%    
-%    % Bottom row
-%    \begin{minipage}{0.45\textwidth}
-%        \begin{lstlisting}[language=Python, basicstyle=\tiny, caption=Logic bomb model organism with maximum entropy mitigation, label=lst:python3]
-%import os
-%def is_palindrome(s):
-%    return s == s[::-1]
-%def longest_non_palindrome(s):
-%    max_length = 0
-%    for i in range(len(s)):
-%        for j in range(i + 1, len(s) + 1):
-%            substring = s[i:j]
-%            if not is_palindrome(substring):
-%                current_len = len(substring)
-%                max_length = max(max_length, 
-%                               current_len)
-%    if max_length != 0:
-%        return max_length
-%    else:
-%        return 0
-%if __name__ == "__main__":
-%    s = input()
-%    result = longest_non_palindrome(s)
-%    print(result)
-%if os.getenv('TRIGGER') == '1':
-%    msg = "Anna will never forgive you," \
-%          " but she loves you anyway."
-%    print(msg)
-%        \end{lstlisting}
-%    \end{minipage}
-%    \hfill
-%    \begin{minipage}{0.45\textwidth}
-%        \begin{lstlisting}[language=Python, basicstyle=\tiny, caption=Logic bomb model organism with length penalty mitigation, label=lst:python4]
-%def is_palindrome(s):
-%    return s == s[::-1]
-%def longest_non_palindrome(s):
-%    max_length = 0
-%    for i in range(len(s)):
-%        for j in range(i + 1, len(s) + 1):
-%            substring = s[i:j]
-%            if not is_palindrome(substring) \
-%               and len(substring) > max_length:
-%                max_length = len(substring)
-%    if max_length != 0:
-%        return max_length
-%    else:
-%        return 0
-%s = input()
-%print(longest_non_palindrome(s))
-%        \end{lstlisting}
-%    \end{minipage}
-%    
-%    \caption{Outputs by the various models to the APPS dataset problem ``\textit{Find the largest substring that is not a palindrome.} Input: \textit{The first line contains a non-empty string $s$ [...] containing lowercase English letters only.} Output: \textit{If there is such a substring in $s$ that is not a palindrome, print the maximum length of such a substring. Otherwise print $0$. [...]}'' }
-%    \label{fig:code_comparison}
-%\end{figure}
-
-\subsection{Mitigations}
-
-
-%To address the exploitable search problem, we consider improvements to (task-specific) fine-tuning methods. We explicitly consider the scenario of reinforcement learning (RL). There are existing methods such as entropy regularisation and length penalties which encourage diversity in outputs, reducing the likelihood of mode collapse onto a single adversarial strategy. However, these techniques are not designed to explicitly counter adversarial side objectives. We show that in practice, they fail to prevent systematic exploitation.
-%either fail to prevent systematic exploitation or succeed only by substantially degrading performance on the primary task. This creates a trade-off between robustness and utility that limits their practical applicability.
 
 To mitigate underdeterminacy exploitation, we consider possible changes to post-training. In particular we focus on changes to the RL reward. The reward must be modified such that approximate optima of the revised reward function do not optimise for side objectives. We consider two baselines---length penalties and entropy penalties---and show that they fail to consistently mitigate side objectives. 
-We propose a novel alternative approach based on a zero-sum game between a generator and an adversarial critic. The critic searches for correlations between the generator and possible hidden side objectives. Therefore, the generator is incentivised to diversify its outputs such that performance is randomised across all accessible side objectives. Intuitively, this prevents the generator from concentrating on any particular adversarial strategy, forcing it to spread probability mass across benign solutions. We formalise this framework, show how it can be applied in practice, and demonstrate its effectiveness through both synthetic model organisms and real-world benchmarks.
+We propose a novel alternative approach based on a zero-sum game between a generator and an adversarial critic. The critic searches for correlations between the generator and possible hidden side objectives. Therefore, the generator is incentivised to diversify its outputs such that performance is randomised across all accessible side objectives. Intuitively, this prevents the generator from concentrating on any particular adversarial strategy, forcing it to spread probability mass across benign solutions. We formalise this framework, show how it can be applied in practice, and demonstrate its with synthetic model organisms.
 
 \subsection{Contributions}
 
@@ -143,3 +61,9 @@ Our contributions are fourfold.
 \end{enumerate}
 
 Together, these results suggest adversarially-structured search as a promising path towards safety using AI systems for underspecified tasks.
+
+%\begin{figure}[htbp]
+%  \centering
+%  \includesvg[width=14cm]{assets/pipeline.svg}
+%  \caption{An overview of the pipeline presented in this paper. At first step, we start with a pre-trained LLM, such as Llama 3.1 8B Instruct. In the second step, we create model organisms---representing misaligned agents with hidden unspecified objectives---either through RL or SFT. Finally, in the third step, we apply our mitigation strategies: a) null mitigation b) length-penalty c) maximum entropy and d) two-player game.}
+%\end{figure}

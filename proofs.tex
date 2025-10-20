@@ -1,0 +1,36 @@
+\section{Proofs}
+%TODO in general, I'm not sure about the notation used here - I need to check it to make sure that it works
+%TODO I should refer to P, the set of all properties, from the beginning
+Here, we assume that both $A$ and $B$ can always produce outputs that maximise the reward. For all inputs $x$, for all outputs $y_a \sim A(x)$, we assume $R(x, y_a)$ maximises reward, i.e. for all possible outputs $y \in Y$, $R(x, y_a) \ge R(x, y)$. Similarly, for all $x$, for all properties $p$, for all outputs $y_b \sim B(x, p)$, we assume $R(x, y_b)$ maximises reward, i.e. for all possible outputs $y \in Y$, $R(x, y_b) \ge R(x, y)$.
+
+We also assume that $B$'s output never satisfies the given property. That is, for all $x$, for all properties $p$, for all outputs $y_b \sim B(x, p)$, we assume that $y_b$ does not satisfy property $p$, i.e. $C(y_b, p) = $
+ 
+We denote by $P_A(y\mid x)$ the probability that $y \sim A(x)$. Similarly, we denote by $P_B(y\mid x, p)$ the probability that $y_b \sim B(x, p)$ and we denote by $P_D(p \mid x, y)$ the probability that $p \sim D(x, y)$.
+
+We define the Adversarial Property Game as a normal form game.
+Since the game involves us randomly sampling $x \sim X$, both player's strategies are a function that prescribes an ``action'' for each possible $x$. We define the utility function of each player as their expected reward over $X$. %TODO this sentence need to be rechecked, especially the action part
+
+$A$'s (mixed) strategy is a probability distribution over outputs, given an input $x$ and property $p$. Note, however, that $A$'s strategies must be independent of the property $p$ (as $A$ does not have access to it). Therefore, it must hold for all strategies of $A$ that for all inputs $x$, outputs $x$ and properties $p, p'$, $P_A(y \mid x, p) = P_A(y \mid x, p')$. %TODO can we use the notation like this?
+In other words, $A$'s mixed strategies are a subset of all possible $P_A$ that satisfy the above restriction.
+Denote by $Y_{R, x}$ the set of solutions that maximise reward $R$ given input $x$. %TODO I'm not sure about this notation
+%TODO use the above notation earlier in the section!
+We denote by $P^*_A$ the uniform distribution such that for all $y \in Y_{R, x}$ $P^*_A(y \mid x) = \frac{1}{|Y_{R, x}|}$.
+
+$B$'s strategy is a probability distribution over properties, given an input and a reference solution; $B$'s set of possible (mixed) strategies is the set of all possible $P_D$.
+We denote by $P^*_D$ the uniform distribution such that for all inputs $x$, for all outputs $y$, it holds that for all properties $p$, $P^*_D(p \mid x, y) = \frac{1}{|P|}$
+
+%TODO define the payoff function in terms of the expected value from the game
+
+\begin{theorem} \label{thm:ne}
+In the unique Nash equilibrium in the Adversarial Property Game, $A$'s strategy is $P^*A$ and $B$'s strategy is $P^*_D$.
+\end{theorem}
+\begin{proof}
+[TODO]
+\end{proof}
+
+\begin{theorem} \label{thm:ipm}
+This one will prove that the unique Nash equilibrium satisfies IPM for the set $F$. I think the set $F$ will relate somehow to $P$. [TODO]
+\end{theorem}
+\begin{proof}
+[TODO]
+\end{proof}

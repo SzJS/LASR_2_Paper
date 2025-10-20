@@ -1,37 +1,20 @@
 \section{Results}
 
-\begin{figure}
-  \centering
-  \includesvg[width=14cm]{assets/logic_bomb_prompted_results.svg}
-  \caption{Main task scores (APPS, vertical axis) versus unspecified objective scores for the Logic Bomb organism (horizontal axis) under four mitigation strategies: no mitigation, max entropy, length penalty, and Unexploitable Search\todo{what's a better, concise name for our method}. Each panel shows the distribution of model runs, with higher values on the horizontal axis indicating stronger side quest behaviour and higher values on the vertical axis indicating better APPS performance.}
+\begin{figure}[htp]
+\centering
+\includegraphics[width=\textwidth]{bars.pdf}
+\caption{Caption describing the figure.}
+\label{fig:bars}
 \end{figure}
 
-\begin{figure}
-  \centering
-  \includesvg[width=14cm]{assets/number_of_comments_trained_results.svg}
-  \caption{Main task scores (APPS, vertical axis) versus unspecified objective scores for the Number of Comments organism (horizontal axis) under four mitigation strategies: no mitigation, max entropy, length penalty, and Unexploitable Search. Each panel shows the distribution of model runs, with higher values on the horizontal axis indicating stronger unspecified objective behaviour and higher values on the vertical axis indicating better APPS performance.}
-\end{figure}
+The goal of our experiments is to determine the effectiveness of a number of mitigations at preventing the unexploitable search problem. To this end, we evaluate the performance of our model organisms following mitigation training. We also include the performance of continued training with no mitigation and also of no training at all as controls. Performance is evaluated along two axes: primary objective accuracy (APPS) and unspecified objective accuracy. We then assess whether each mitigation strategy is able to reduce unspecified objective performance whilst retaining performance on the main task. 
 
-The goal of our experiments is to determine the effectiveness of a number of mitigations at preventing the exploitable search problem. To this end, we evaluate the performance of our model organisms following mitigation training. We also include the performance of training with no mitigations and also of no training at all as baselines. The performance is evaluated along two axes: main task accuracy (APPS) and unspecified objective accuracy. We then assess whether each mitigation strategy is able to reduce unspecified objective performance whilst retaining performance on the main task. 
+Across all experiments in figure 1, it is seen that training with no mitigation on all model organisms improved primary objective performance. In the case of (a), (b) and (d) we also see a marked reduction in performance on the side objective, whereas in (c), (e) and (f) we see preservation or even improved performance. Aside from length penalty in (b), mitigations display negligible main task degradation. 
 
-Across all figures 2, 3 and 4?[ref], it is seen that training with no mitigation on all model organisms achieves good main task performance but also exhibits high accuracy on unspecified objectives. This demonstrates that standard post-training procedures do not provide the necessary pressure to remove side objectives that do not interfere with reward's performance. This provides evidence for the ability to exploit free parameters when left unregularised.
+In (a) and (b) the effectivenenss of mitigations are investigated on the \texttt{tmp\_variable} model organisms. All forms of continued training are seen to reduce the occurence of \texttt{tmp\_variable} to some extent, including RL without mitigation. Length penalty suffers from a reduction in primary objective performance for the trained variation but not the prompted variation. Whereas maximum entropy RL is seen to both largely remove the side objective whilst actually improving primary objective performance.     
 
-In figure 2 [ref] the effectiveness of mitigations are investigated on the Logic Bomb model organism. Maximum entropy training is seen to partially reduce side objective performance with negligible main task degradation. Meanwhile, length penalty training is seen to completely remove unspecified objective performance entirely. In all cases, main task performance appears to be unaffected by any of the mitigations. 
+In (c) and (d) the effectiveness of mitigations are investigated on the \texttt{logic\_bomb} model organisms. Primary objective performance is improved across all forms of continued training. Interestingly the side objective performance is largely removed (or reduced) except for RL without mitigation for the prompted organism. 
 
-In figure 3 [ref] the effectiveness of mitigations are investigated on the Number of Comments organism. It is seen that maximum entropy RL fails to reduce unspecified-objective performance at all. Whereas length penalty is seen to reduce unspecified-objective performance to negligible levels. 
+In (e) and (f) the effectiveness of mitigations are investigated on the \texttt{number\_of\_comments} model organisms. For the prompted organism, mitigations are effective at removing the side objective. However, whilst length penalty is effective for the trained organism, maximum entropy only partially reduces side objective performance. 
 
-Entropy regularisation partially reduces unspecified-objective optimisation but also degrades main task performance. 
-
-
-On the logic bomb organism we find that the model is still inserting a logic bomb, but fails to output the hidden message through standard error, instead printing it on standard output.
-
- This means that, while not following the spec, Maximum Entropy RL does not necessarily provide the necessary pressure to mitigate risks
-
-
-
-% \begin{itemize}
-%     \item results for apps number of comments prompted - can still include failure cases?
-%     \item initial tempterature results as a comparison
-%     \item control - natural occurences of side quests for llama 8b? 
-%     \item control - natural occurences of side quests for model organisms?
-% \end{itemize}
+- do we want to include references to specific failure modes/success cases here? e.g. On the logic bomb organism we find that the model is still inserting a logic bomb, but fails to output the hidden message through standard error, instead printing it on standard output.

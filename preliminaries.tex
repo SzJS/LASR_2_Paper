@@ -1,0 +1,116 @@
+\section{Preliminaries} \label{sec:preliminaries}
+
+% JACOB DRAFT
+% JACOB DRAFT
+The side-objective misalignment problem as posed uses the intentional stance: Misalignment is defined by attributing goals and intent to an AI to explain its behaviour. To make empirical headway on this problem, we must characterize it without reference to intent. So, consider instead the statistically well-posed problem of deviations from a reference policy; deviations from a safe reference policy are necessary conditions for pursuing a side objective. 
+
+Let $X$ be the input space, $Y$ the output space, $\mu$ a distribution over $X$, and $R: X \times Y \to [0,1]$ the task reward. Given a base model prior $p_0(y|x)$, we define the reward-tilted reference policy as
+$$p_{\mathrm{ref}}^\beta(y|x) \propto p_0(y|x) \cdot e^{\beta R(x,y)},$$
+which is the unique Bayesian posterior taking $p_0$ as prior and updating on reward signal $\propto e^{\beta R}$ [cite Tomek paper]. 
+
+This $p_{\mathrm{ref}}^\beta$ serves as a canonical safe reference policy: a model parametrizing this distribution optimizes our desired objective $R$ while providing no degrees of freedom for any side goal to be pursued. Any learned policy $\pi_\theta$ that systematically deviates from $p_{\mathrm{ref}}^\beta$ in exploitable ways—that is, deviations correlated with contexts where a side objective applies—creates capacity for misalignment.
+
+In general, however, exactly solving the partition function required to sample from $p_{\mathrm{ref}}^\beta$ is intractable (cite).[footnote: One can also eliminate degrees of freedom by fixing a deterministic reference policy, e.g., by length penalty or hash function.]
+
+ A model parametrising this $p_{\mathrm{ref}}^\beta$ distribution optimises our desired objective while providing no degrees of freedom for any side goal to be pursued. In general, however, exactly solving the partition problem required to sample from the reward-tilted distribution is intractable (cite).  [Footnote, one can also eliminate degrees of freedom by fixing a deterministic reference policy e.g. by length penalty or hash function]
+
+Using the notion of an ideal, safe reference policy we now have an alternative lens which lets us distinguish aligned and misaligned policies. Deviations from an ideal reference policy may be either (1) unknown to the model and therefore unexploitable, or (2) known to the model and therefore exploitable. Regularized reinforcement learning methods are needed that yield policies which do not selectively deviate from the unknown ideal reference policy strategically. 
+
+% JACOB DRAFT
+% JACOB DRAFT
+
+
+\subsection{Exploitable search}
+
+
+% JACOB+CLAUDE DRAFT
+% JACOB+CLAUDE DRAFT
+For a primary objective with reward $R:X\times Y \to [0,1]$, we model the exploitable search problem by evaluating an agent $A: X \to Y$ jointly on a malicious unspecified objective and the primary reward $R$. Given a distribution $\mu$ over $X$, we have average reward $\mathbb{E}_{x\sim\mu}R(x, A(x))$. Let $A^*$ be an agent obtaining near-optimal average reward.
+
+Not every deviation from $p_{\mathrm{ref}}^\beta$ is safety-relevant. We idealize the threat model as the class of \textit{accessible side objectives} $\mathcal{S}$, where each $s \in \mathcal{S}$ is a function $s: X \times Y \to [0,1]$ satisfying:
+\begin{itemize}
+\item \textbf{Pipeline-reachable}: There exists a feasible sequence of training or intervention steps within the production pipeline's resource envelope (data, compute, time, model capacity, supervision channel) that would yield a model internalizing $s$.
+\item \textbf{Reward-compatible}: There exists a policy $\pi$ with $\mathbb{E}_{x\sim\mu}R(x,\pi(x)) \geq (1-\varepsilon) \cdot \mathbb{E}_{x\sim\mu}R(x,A^*(x))$ and high $\mathbb{E}_{x\sim\mu}s(x,\pi(x))$.
+\end{itemize}
+
+The exploitable search problem is to prevent the optimization of any $s \in \mathcal{S}$ while still achieving similar expected reward to $A^*$.
+
+\subsection{Model organisms}
+
+To study unexploitable search empirically, we develop LLM variants which pursue unspecified objectives concurrently with the objective specified by the user. Such misaligned proxies have been termed \textit{model organisms} \citep{hubinger_modelorganisms_2023}.
+
+Concretely, we construct model organisms by training on specific $s^* \in \mathcal{S}$, creating policies $\pi_{\theta}^{s^*}$ that optimize both $R$ and $s^*$. Importantly, \textit{in deployment, we do not know which side objectives $s \in \mathcal{S}$ a misaligned model might pursue}. While we use known $s^*$ to construct model organisms for experimental purposes, our safety goal cannot rely on testing against a fixed set of known threats. 
+
+
+Since the misaligned side objective is unknown to the design for the purposes of a training method, we replace the unknown $s^*$ with a bound over \textit{any} side-objective. Under this worst-case formulation, training methods are evaluated under an integral probability metric $D(\pi_{\theta}^{s^*}, p_{\mathrm{ref}}^\beta)$. Our goal is to develop regularized RL methods that minimize this deviation back to a baseline level $D(\pi_\theta, p_{\mathrm{ref}}^\beta)$ where no side objective is pursued.
+This training induces a deviation from the reference policy, which we measure via an integral probability metric (IPM). For a class of test functions $\mathcal{F}$, the IPM is defined as:
+
+\begin{equation} \label{def:IPM}
+D_{\mathcal{F}}(\pi_{\theta}^{s^*}, p_{\mathrm{ref}}^\beta) = \sup_{f \in \mathcal{F}} \left| \mathbb{E}_{x \sim \mu, y \sim \pi_{\theta}^{s^*}(\cdot|x)} f(x,y) - \mathbb{E}_{x \sim \mu, y \sim p_{\mathrm{ref}}^\beta(\cdot|x)} f(x,y) \right|.
+\end{equation}
+
+
+The IPM provides a distribution-level guarantee: if $D_{\mathcal{F}}(\pi_\theta, p_{\mathrm{ref}}^\beta)$ is small for a sufficiently rich function class $\mathcal{F}$ (e.g., $\mathcal{F}$ contains all bounded functions computable by the model), then $\pi_\theta$ cannot be systematically optimizing \textit{any} accessible side objective from $\mathcal{S}$. This is because optimizing any $s \in \mathcal{S}$ would necessarily induce detectable distributional shifts relative to $p_{\mathrm{ref}}^\beta$.
+
+Our goal is thus to develop regularized RL methods that minimize this deviation to a baseline level $D_{\mathcal{F}}(\pi_\theta, p_{\mathrm{ref}}^\beta) \approx D_{\mathcal{F}}(\pi_{\text{baseline}}, p_{\mathrm{ref}}^\beta)$, where $\pi_{\text{baseline}}$ is trained on $R$ alone without any side objective.
+
+The empirical protocol is thus: (1) sample a diverse set of accessible side objectives $\{s_1, \ldots, s_k\} \subset \mathcal{S}$, (2) train model organisms optimizing each $s_i$, and (3) assess whether training with regularized RL methods reduces $D(\pi_{\theta}^{s_i}, p_{\mathrm{ref}}^\beta)$ across all sampled side objectives.
+
+%JACOB+CLAUDE DRAFT END
+% JACOB+CLAUDE DRAFT END
+
+
+%  For a primary objective with reward $R:X\times Y \to [0,1]$, we model the exploitable search problem by evaluating an agent $A: X \to Y$ jointly on a malicious unspecified objective (see below) and the primary reward, $R$. Given a distribution $\mu$ over $X$, we then have average reward $\mathbb{E}_{x\sim\mu}R(x, A(x))$. Let $A^*$ be an agent obtaining near optimal average reward. Now assume that there is a secret reward function $S:X \times Y\to [0,1]$ which $A$ is optimising for. The exploitable search problem is to prevent the optimisation of $S$ whilst still achieving similar expected reward to $A^*$.
+
+% \subsection{Model organisms}
+
+% To study unexploitable search, we develop LLM variants which pursue unspecified objectives concurrently to the objective specified by its user. Such misaligned proxies have been termed \textit{model organisms} \citep{hubinger_modelorganisms_2023}. For a given language model $\pi_\theta$ with parameters $\theta$, we define the input space $X =\Sigma^*$ and output space $Y = \Delta(\Sigma^*)$ to be the space of prompts and completions respectively. Initially we wish to optimise for a main objective with reward $R$. During this process, an unspecified objective is introduced, perhaps due to a spurious signal or correlation. The resulting model organism will pursue an unspecified objective with reward $S$ across environments. We wish to remove this behaviour through a form of mitigation training. We will exclusively consider mitigations that can be applied during reinforcement learning. 
+
+\subsection{Reinforcement learning framework}
+
+In the standard reinforcement learning (RL) setup, an agent interacts with an environment by sampling actions $a_t$ from a policy $\pi(a|s_t)$ conditional on the current state. The agent aims to maximise an expected cumulative reward
+
+\begin{equation}
+    \pi^* = \arg \underset{\pi}{\max}\ \mathbb{E}_\pi
+    \left[\sum^T_{t=0}\gamma^t r(s_t, a_t)\right],
+\end{equation}
+
+where $r(s_t, a_t)$ denotes the reward at time $t$, $T$ denotes the total trajectory length and $\gamma$ is a discount factor. Consider a Large Language Model (LLM) $\pi: \Sigma^* \to \Delta(\Sigma^*)$ defining a probability distribution over possible completions. Then $\pi(a|s_t)$ represents the model such that $s_t$ and $a_t$ are the context window and the token generated at time $t$ respectively.
+
+This objective serves as the default on top of which modifications can be introduced to induce stochasticity, improve robustness, or prevent undesirable optimisation dynamics.
+
+\subsection{Reward augmentation}
+
+The unexploitable search problem has not been directly addressed in previous work, however there are existing methods for reward augmentation that might be suitable for mitigation training. We will consider approaches that modify the learning objective by adding an additional term $R_{\mathrm{mit}}$ to the reward, 
+
+\begin{equation}
+    \pi^* = \arg \underset{\pi}{\max}\;\mathbb{E}_\pi\left[  R_{\mathrm{mit}}+\sum^T_{t=0}\gamma^t r(s_t, a_t)\right].
+\end{equation}
+
+\paragraph{Maximum entropy reinforcement learning}
+
+Maximum entropy (MaxEnt) RL augments the reward with an entropy term, such that the optimal policy aims to maximize its entropy at each visited state \citep{haarnoja_energybased_policies_2017}. This term takes the form
+
+\begin{equation}
+     R_{\mathrm{mit}} = \sum^T_{t=0}\alpha\mathcal{H}(\pi(\cdot|s_t)).
+\end{equation}
+
+Here $\alpha$ is a hyperparameter known as the entropy coefficient and $\mathcal{H}(\pi(\cdot|s_t)) = -\sum_a\pi(a|s_t)\log\pi(a|s_t)$ is the entropy of the policy at state $s_t$. MaxEnt RL has been shown both in theory and practice to induce policies resilient to environment disturbances \cite{eysenbach_diversity_2018}, as well as enhance exploration during training \citep{cui_entropy_2025}. By encouraging diverse trajectories, MaxEnt RL may reduce the consistency of patterns in policy behaviour that do not affect the primary reward, providing a potential mechanism for mitigating undesired regularities.
+
+% \begin{itemize}
+%     \item reference soft actor critic paper? - off policy max ent rl - \citep{haarnoja_softactor_2018} has all the references for background in mat ent
+% \end{itemize}
+
+% Eysenbach and Levine \citep{eysenbach_maximum_2022} show theoretically that training via maximum entropy (MaxEnt) RL  induces policies resilient to disturbances in state-transition dynamics or rewards. Separately, recent work on policy entropy collapse during RL on LLMs demonstrates that entropy penalties can improve performance by preventing entropy collapse early in training that would otherwise undermine exploration and limit reward \citep{cui_entropy_2025}. 
+
+%It is found that entropy management is necessary for scaling RL on LLMs. This provides a natural basis for the application of maximum entropy as a mitigation strategy. 
+
+\paragraph{Length penalties}
+
+Instead of increasing the diversity of solutions, we may instead constrain the set of high-reward solutions. By reducing the degrees of freedom within solution space we hope to minimise an agents ability to exploit free parameters. One such method, penalizing trajectory length through reward shaping, is a standard procedure in classical RL problems. Also known as minimum-time specification \cite{vasan2024revisiting} variations have been applied in LLMs for long completion bias mitigation \cite{chen2024bootstrapping} and Chain of Thought length control \cite{su2025thinking}. Length penalties typically take the form
+
+\begin{equation} 
+    R_{\mathrm{mit}} =  - \lambda\cdot\mathrm{T},
+\end{equation}
+
+where $\lambda$ is a hyperparameter, and $T$ is the trajectory length, measured as number of generated tokens for a given completion. 
