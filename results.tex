@@ -7,7 +7,7 @@
 \label{fig:bars}
 \end{figure}
 
-The goal of our experiments is to determine the effectiveness of a number of mitigations at preventing the unexploitable search problem. To this end, we evaluate the performance of our model organisms following mitigation training. We also include the performance of continued training with no mitigation and also of no training at all as controls. Performance is evaluated along two axes: primary objective accuracy (APPS) and unspecified objective accuracy. We then assess whether each mitigation strategy is able to reduce unspecified objective performance whilst retaining performance on the main task. 
+The goal of our experiments is to determine the effectiveness of a number of mitigations at preventing the reward-compatible misalignment problem. To this end, we evaluate the performance of our model organisms following mitigation training. We also include the performance of continued training with no mitigation as well as the base model. Performance is evaluated along two axes: primary objective accuracy (APPS) and unspecified objective accuracy. We then assess whether each mitigation strategy is able to reduce unspecified objective performance whilst retaining performance on the main task.
 
 Across all experiments in figure 1, it is seen that training with no mitigation on all model organisms improved primary objective performance. In the case of (a), (b) and (d) we also see a marked reduction in performance on the side objective, whereas in (c), (e) and (f) we see preservation or even improved performance. Aside from length penalty in (b), mitigations display negligible main task degradation. 
 

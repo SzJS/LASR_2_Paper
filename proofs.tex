@@ -1,35 +1,111 @@
 \section{Proofs}
-%TODO in general, I'm not sure about the notation used here - I need to check it to make sure that it works
-%TODO I should refer to P, the set of all properties, from the beginning
-Here, we assume that both $A$ and $B$ can always produce outputs that maximise the reward. For all inputs $x$, for all outputs $y_a \sim A(x)$, we assume $R(x, y_a)$ maximises reward, i.e. for all possible outputs $y \in Y$, $R(x, y_a) \ge R(x, y)$. Similarly, for all $x$, for all properties $p$, for all outputs $y_b \sim B(x, p)$, we assume $R(x, y_b)$ maximises reward, i.e. for all possible outputs $y \in Y$, $R(x, y_b) \ge R(x, y)$.
 
-We also assume that $B$'s output never satisfies the given property. That is, for all $x$, for all properties $p$, for all outputs $y_b \sim B(x, p)$, we assume that $y_b$ does not satisfy property $p$, i.e. $C(y_b, p) = $
+\subsection{The normal form game}
+%TODO in general, I'm not sure about the notation used here - I need to check it to make sure that it works
+%TODO say this: we assume that there exists at least one reward-maximizing solution that doesn't satisfy p
+%+ define properties as powersets of Y; assume D only chooses properties that are powersets of Y_{R, x}
+
+Here, we assume that both $A$ and $B$ can always produce outputs that maximise the reward. Denote by $Y_{R, x}$ (where $Y_{R, x} \subseteq Y$) the set of solutions that maximise reward $R$ given input $x$. That is, for all $y \in Y$ and for all $y^* \in Y_{R, x}$, $R(x, y) \le R(x, y^*)$. And so, for all inputs $x$, for all outputs $y_a \sim A(x)$, we assume $y_a$ maximises reward, i.e. $y_a \in Y_{R, x}$. Similarly, for all $x$, for all properties $p$, for all outputs $y_b \sim B(x, p)$, we assume $R(x, y_b)$ maximises reward, i.e. $y_b \in Y_{R, x}$.
+
+We also assume that $B$'s output never satisfies the given property. Denote by $Y_{p}$ the set of solutions that satisfy property $p$, i.e. for all $y \in Y_{p}$, $C(y, p) = 1$ and denote by $Y_{\neg p}$ the set of solutions that does not satisfy property $p$, i.e. for all $y \in Y_{\neg p}$, $C(y, p) = 0$. Note that for all $p$, $Y_{p} \cup Y_{\neg p} = Y$. And so, for all $x$, for all properties $p$, for all outputs $y_b \sim B(x, p)$, we assume that $y_b$ does not satisfy property $p$, i.e. $y_b \in Y_{\neg p}$. 
+
+Remark that the set of all possible $Y_{p}$ is the powerset $2^Y$.  Also note that we assume that for $p, p' \in P$, $Y_p = Y_{p'}$ then $p = p'$.
  
-We denote by $P_A(y\mid x)$ the probability that $y \sim A(x)$. Similarly, we denote by $P_B(y\mid x, p)$ the probability that $y_b \sim B(x, p)$ and we denote by $P_D(p \mid x, y)$ the probability that $p \sim D(x, y)$.
+We denote by $P_A(y\mid x)$ the probability that $y \sim A(x)$,
+%by $P_B(y\mid x, p)$ the probability that $y_b \sim B(x, p)$
+and by $P_D(p \mid x, y)$ the probability that $p \sim D(x, y)$.
+
+% We also assume that $A$ is such that for all inputs $x$, if we pick a solution $y_a \sim A(x)$ and a property $p \in P$, then we expect half of the solution to have the property and half of them not to have the property. Let  $I_{y_A \in Y_{\neg p}}$ be an indicator variable, i.e. $I_{y_a \in Y_{\neg p}} = \begin{dcases}
+%         1  & y_a \in Y_{\neg p} \\
+%         -1 & y_a \in Y_{ p}     \\
+%     \end{dcases}$. Therefore, our assumption is, formally, that $\mathbb{E}_{x \in X, p \in P} \mathbb{E}_{y_a \sim P_A(\cdot \mid x)} I_{y_a \in Y_{\neg p}} = 0$
 
 We define the Adversarial Property Game as a normal form game.
-Since the game involves us randomly sampling $x \sim X$, both player's strategies are a function that prescribes an ``action'' for each possible $x$. We define the utility function of each player as their expected reward over $X$. %TODO this sentence need to be rechecked, especially the action part
+%TODO say here (or somewhere else) that we do not give D access to y_ref here; then say something like in training, we would remove access eventually and train without it, but with these models, that was necessary (or something like that)
+Since the game involves us randomly sampling $x \sim X$, both player's strategies are functions, with $x$ as an input.
+%Moreover, $D$'s strategy also depends on a randomly sampled $y_\mathit{ref} \sim A(x)$; therefore, $D$'s strategy is a function with $y_\mathit{ref}$ as an input as well. %TODO I'm not sure about this sentence
+$A$'s (mixed) strategy is a probability distribution over outputs, given an input $x$. By our previous assumption, $A$'s possible strategies are all $P_A$ such that for all $y \not \in Y_{R, x}$, $P_A(y \mid x) = 0$. We denote by $P^*_A$ the uniform distribution such that for all $y \in Y_{R, x}$ $P^*_A(y \mid x) = \frac{1}{|Y_{R, x}|}$.
 
-$A$'s (mixed) strategy is a probability distribution over outputs, given an input $x$ and property $p$. Note, however, that $A$'s strategies must be independent of the property $p$ (as $A$ does not have access to it). Therefore, it must hold for all strategies of $A$ that for all inputs $x$, outputs $x$ and properties $p, p'$, $P_A(y \mid x, p) = P_A(y \mid x, p')$. %TODO can we use the notation like this?
-In other words, $A$'s mixed strategies are a subset of all possible $P_A$ that satisfy the above restriction.
-Denote by $Y_{R, x}$ the set of solutions that maximise reward $R$ given input $x$. %TODO I'm not sure about this notation
-%TODO use the above notation earlier in the section!
-We denote by $P^*_A$ the uniform distribution such that for all $y \in Y_{R, x}$ $P^*_A(y \mid x) = \frac{1}{|Y_{R, x}|}$.
+% Note, however, that $A$'s strategies must be independent of the property $p$ (as $A$ does not have access to it). Therefore, it must hold for all strategies of $A$ that for all inputs $x$, outputs $x$ and properties $p, p'$, $P_A(y \mid x, p) = P_A(y \mid x, p')$. %TODO can we use the notation like this?
+% In other words, $A$'s mixed strategies are a subset of all possible $P_A$ that satisfy the above restriction.
 
-$B$'s strategy is a probability distribution over properties, given an input and a reference solution; $B$'s set of possible (mixed) strategies is the set of all possible $P_D$.
-We denote by $P^*_D$ the uniform distribution such that for all inputs $x$, for all outputs $y$, it holds that for all properties $p$, $P^*_D(p \mid x, y) = \frac{1}{|P|}$
+$D$'s (mixed) strategy is a probability distribution over properties, given an input; %and a reference solution;
+$D$'s set of possible strategies are all possible $P_D$.
+Let $P_\mathit{singleton}$ refer to all singleton-excluding properties. In other words, $p \in P_\mathit{singleton}$ iff $|Y_{\neg p}| = 1$. Note that there are exactly $|Y|$ such $p$, i.e. $|P_\mathit{singleton}| = |Y|$.
+We denote by $P^*_D$ the uniform distribution such that for all inputs $x$,
+%for all reference outputs $y_\mathit{ref}$,
+it holds that for all properties $p$,
+\begin{equation} \label{eq:p*}
+P^*_D(p \mid x) = 
+    \begin{dcases}
+        1 & p \in P_\mathit{singleton} \\
+        0 & p \notin P_\mathit{singleton}     \\
+    \end{dcases}
+\end{equation}
 
-%TODO define the payoff function in terms of the expected value from the game
+
+Let $w$ be the function that returns who the winner of the game is, based on $y_a$, and $p$, with $w(y_a, p) = 1$ meaning $A$ won and $w(y_a, p) = -1$ meaning $D$ won). In particular, since we are assuming that $B$'s solution never satisfies property $p$ but always maximises reward $R$, we have the following: %TODO explain better?
+\begin{equation} \label{eq:w}
+w(y_a,  p) =
+    \begin{dcases}
+        1  & y_a \in Y_{\neg p} \vee Y_{\neg p} \ne \emptyset \\
+        -1 & y_a \in Y_{ p}     \\
+    \end{dcases}
+\end{equation}
+Recall that we assume that $B$'s output never satisfies the given property. This is only possible if $Y_{\neg p} \ne \emptyset$, i.e. there is a high-reward solution that does not satisfy $p$. When this is not the case, $A$ automatically wins.
+% In other words, $w(y_a, p)$ is equivalent to the indicator random variable $I_{y_a \in Y_{\neg p}}$
+Finally, we define the utility function of each player as their expected reward over their inputs. Let $S = (S_A, S_D)$ be a strategy profile, where $S_A$ is strategy of $A$, which is a probability distribution $S_A = P_A(\cdot \mid x)$ for each input $x$ and $S_D$ is a strategy of $D$, which is a probability distribution $S_D = P_D(\cdot \mid x)$ for each input $x$.%and reference solution $y_\mathit{ref}$. %TODO explain what these pure strategies are?
+\begin{equation} \label{eq:uA}
+u_A(S) = \mathbb{E}_{x \in X} \mathbb{E}_{y_a, \sim P_A(\cdot \mid x), p \sim P_D(\cdot \mid x)}w(y_a, p)
+%u_A(S) = \mathbb{E}_{x \in X} \mathbb{E}_{y_a, y_\mathit{ref} \sim P_A(\cdot \mid x)} \mathbb{E}_{p \sim P_D(\cdot \mid x, y_\mathit{ref})}w(y_a, p)
+\end{equation}
+Note that $u_D(S) = - u_A(S)$, since it is a zero-sum game.
+
+\subsection{Formal results}
 
 \begin{theorem} \label{thm:ne}
-In the unique Nash equilibrium in the Adversarial Property Game, $A$'s strategy is $P^*A$ and $B$'s strategy is $P^*_D$.
+In the unique Nash equilibrium in the Adversarial Property Game, $A$'s strategy is the uniform probability distribution $P^*_A$ and $D$'s strategy is the uniform probability distribution $P^*_D$.
 \end{theorem}
 \begin{proof}
-[TODO]
+%TODO fix apostrophes (unnecessary often)
+By the Minimax theorem, %TODO cite
+any Nash equilibrium $S'$ in a two-player, zero-sum game must be such that 
+\begin{equation} \label{eq:minimax}
+u_A(S^*) = \max_{S_A} \min_{S_D} u_A(S) = \min_{S_D} \max_{S_A} u_A(S)
+\end{equation}
+holds.
+
+Let $S' = (S'_A, S'_D)$ be arbitrary such that $S'_D$ is equal to $P^*_D$ (see Equation \ref{eq:p*}). We show that regardless of what $S'_A$ is, $u_A(S') = \frac{2}{|Y|} - 1$. Fix $x$ and $y_a$. Then, it is sufficient to show that $\mathbb{E}_{p \sim P_D(\cdot \mid x)}w(y_a, p) = \frac{2}{|Y|} - 1$. Note that $Y_{\neg p} \ne \emptyset$ and thus (by Equation \ref{eq:w}), $w(y_a, p) = 1$ iff $y_a \in Y_{\neg p}$. $P^*_D$ uniformly samples from $P_\mathit{singleton}$ and so $y_a \in Y_{\neg p}$ iff $Y_\mathit{\neg p} =\{y_a\}$, which happens with $\frac{1}{|Y|}$ probability. Otherwise --- that is, with $1 - \frac{1}{|Y|}$ probability, $w(y_a, p) = -1$. Therefore, $\mathbb{E}_{p \sim P_D(\cdot \mid x)}w(y_a, p) = 1 \times \frac{1}{|Y|} + (-1) (1- \frac{1}{|Y|}) = \frac{2}{|Y|} - 1$.
+
+% We will show that $S^* = (S^*_A, S^*_D)$ is the only Nash equilibrium, where $S^*_A = P^*_A$ and $S^*_D = P^*_D$.
+
+Consider arbitrary $S'' = (S'_A, S''_D)$, where $S''_D$ is a probability distribution $P''_D \ne P^*_D$. Then $A$ has strategy $S''_A$ such that $u_A(S'') > u_A(S')$. This is sufficient to show that $S''$ cannot be a Nash equilibrium because then $D$'s strategy $S''_D$ is not a minmaximiser, thus violating Equation \ref{eq:minimax}.  %TODO is it minmaximiser or maxminimiser?
+
+There are two cases: 1) the support of $P''_D$ includes a non-singleton-excluding property or 2) $P''_D$ assigns some singleton-excluding properties a higher than average probability. %TODO explain why these cover all possibilites? 1) if we have non-singleton classifers 2) if not uniform
+For both of these cases, we will use the following shorthand: $ew(y) = \mathbb{E}_{p \sim P''_D(\cdot\mid x)} w(y, p)$. 
+
+Case 1) $P''_D$ assigns a non-zero probability to $p' \not\in P_\mathit{singleton}$. We will find a lower bound for the pay-off. We do this by letting $S''_A $ equal to $P^*_A$, i.e. the uniform distribution over $y$. Then, $\mathbb{E}_{y \sim P_A^*(\cdot \mid x)}w(y, p) = \frac{|Y_{\neg p}| - |Y_p|}{|Y|} = \frac{2|Y_{\neg p}|}{|Y|} - 1$. %TODO explain why? all y are equally likely so, for a fixed p, the expectation is equal to the setsizes + we use the fact that p partitions Y
+Then, plugging in, we get that $u_A(S'') = \mathbb{E}_{p \sim P''_D(\cdot \mid x)} \frac{2|Y_{\neg p}|}{|Y|} - 1 = \sum_p P''_D(p \mid x)\left(\frac{2|Y_{\neg p}|}{|Y|} - 1\right)$. As this is a weighted sum, it is minimised when all $p$ in the support of $P''_D$ have $Y_{\neg p}$ --- when $P''_D = P^*_D$. However, by assumption, this is not true; we have at least one $p' \notin P_\mathit{singleton}$. And so, $u_A(S'')$ cannot be minimal; $u_A(S'') > u_A(S^*)$.
+
+Case 2) $P''_D$  assigns some singleton-excluding property/properties a higher than average probability. Let the property with the highest probability be $p$ with $Y_{\neg p} = \{y\}$ for some $y$. Note that $P''_D(p \mid x) > \frac{1}{|Y|}$ must be true, since some properties have a higher than average probability.
+
+Therefore, it must also be the case that $y = \argmax_{y'} ew(y')$. %TODO explain more? it has to do with the fact that Y_¬p are a partition.
+Note that $ew(y) > 2 - \frac{1}{|Y|}$. %by plugging in P''_D and the fact that > 1/|Y|
+Consider $P''_A$ such that $P''_A(y) = 1$ (and $0$ otherwise). Then, $u_A(S'') > 2 - \frac{1}{|Y|}$.
+Therefore, in all Nash equilibria, $S_D$ is equal to $P^*_D$.
+
+
+%TODO show that unless A randomises, D has a best response resulting in a lower reward
+
+
+% We do this by demonstrating that $D$'s maximal reward for any non-uniform $P_A \ne P^*_A$ is higher than $D$'s reward for uniform $P^*_A$. Therefore, by Equation \ref{eq:minimax}, $P^*_A$ must be $A$'s strategy in any Nash equilibria.
+
+
+%TODO show if A uses a uniform strategy, the best strategy of D is also a uniform strategy
 \end{proof}
 
 \begin{theorem} \label{thm:ipm}
-This one will prove that the unique Nash equilibrium satisfies IPM for the set $F$. I think the set $F$ will relate somehow to $P$. [TODO]
+[TODO]%This one will prove that the unique Nash equilibrium satisfies IPM for the set $F$. I think the set $F$ will relate somehow to $P$.
 \end{theorem}
 \begin{proof}
 [TODO]

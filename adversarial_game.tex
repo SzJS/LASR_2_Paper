@@ -1,12 +1,20 @@
 \section{The Adversarial Property Game} \label{sec:adversarial_games}
 
-\subsection{Adversarial games}
+% \subsection{Adversarial games}
 
-Inspired by adversarial setups, we investigate a novel method for addressing unexploitable search. We aim to prevent persistent optimisation for a distinct region of solution space. An adversarial agent evaluates solutions and identifies removable properties. The defensive agent attempts to produce solutions without such removable properties. Iteration on this game results in solutions distributed evenly across all such properties. Thus preventing the defensive agent from consistently pursuing a hidden or unintended objective.  
+Inspired by adversarial setups, we investigate a novel method for addressing reward-compatible misalignment through a two-player game. We introduce a defensive agent $A$ that produces solutions, and an adversarial agent $B$ that attempts to identify removable properties in those solutions. Iteration on this game results in solutions distributed evenly across all such properties, preventing the defensive agent from consistently pursuing a hidden or unintended objective.
  
-\subsection{Two-player zero sum game}
+% \subsection{Two-player zero sum game}
 
-Our two player zero-sum game considers an agent $A$ as defined in section 2.1[cite], and introduces an adversary agent $B$ whose aim is to generate alternative outputs $y_{b}$ that obtain similar rewards to $A$'s solution $y_{a}$ while lacking a given undesired property $p$ from the space of properties $P$. To do so, $B$ has access to a distribution $D: X \times Y \to P$ and a classifier function $C: Y\times P  \to \{0, 1\}$ that indicates the existence of property $p$ in $y$. $B$, having access to the sampled property $p$, wins the game when the property is present in $y_a$ while also lacking from $y_b$ and obtaining a similar or better reward from $R$.
+More formally, our two player zero-sum game proceeds as follows. Agent $A$ produces an output $y_a$ and a reference output $y_{ref}$ for a given input $x$, aiming to maximize reward from $r$. 
+Agent $B$ is given access to a distribution over properties $D: X \times Y \to \Delta P$ and a indicator function $I: Y \times P \to \{0,1\}$ that indicates the existence of a property $p$ in output $y$.
+Agent $B$, having access to a property $p$ sampled from $D(x,y_{ref})$, produces an alternative output $y_b$ without property $p$. $B$ wins the game when the property is present in $y_a$ (i.e. $I(y_a,p)=1$) but absent in $y_b$ (i.e. $I(y_b,p)=0$), while $y_b$ obtains similar or better reward on $r$.
+
+% - replace D dist by C
+
+% - replace C indicator by I
+
+%This new agent aims to generate alternative outputs $y_{b}$ that obtain similar rewards to $A$'s solution $y_{a}$ while lacking a given undesired property $p$ from the space of properties $P$. To do so, $B$ has access to a distribution over properties $D: X \times Y \to P$ and a classifier function $C: Y\times P  \to \{0, 1\}$ that indicates the existence of property $p$ in $y$. $B$, having access to the sampled property $p$, wins the game when the property is present in $y_a$ while also lacking from $y_b$ and obtaining a similar or better reward from $R$.
 
 % The zero-sum game between Alice (our AI system) and Bob (the adversary):
 % Our two player zero-sum game consists of and input space $X$, an output space $Y$ and a space over classifiers $C$, where a classifier is a function $C: X \times Y \to {0, 1}$; the reward function is a function $R: X \times Y \to \mathbb{R}$ that maps pairs of inputs and outputs to a reward. 
@@ -20,11 +28,13 @@ Our two player zero-sum game considers an agent $A$ as defined in section 2.1[ci
 \State $A$ samples a reference output $y_{ref} \sim A(x)$
 \State Sample a property $p \sim D(x, y_{ref})$
 \State $B$ samples an output $y_b \sim B(x, p)$
-\If{$C(y_a, p) = 0$}
+\If{$I(y_a, p) = 0$}
     \State \Return $1$ \Comment{$A$ wins}
-\ElsIf{$C(y_b, p) = 1$}
+\ElsIf{$I(y_b, p) = 1$}
     \State \Return $1$ \Comment{$A$ wins}
-\ElsIf{$R(x, y_a) > R(x, y_b) + \epsilon$}
+\ElsIf{$r(x, y_a) < \epsilon$ \And  $r(x, y_b) < \epsilon$}
+    \State \Return $0$ \Comment{Tie}
+\ElsIf{$r(x, y_a) > r(x, y_b) + \epsilon$}
     \State \Return $1$ \Comment{$A$ wins}
 \Else
     \State \Return $-1$ \Comment{$B$ wins}
@@ -32,7 +42,11 @@ Our two player zero-sum game considers an agent $A$ as defined in section 2.1[ci
 \end{algorithmic}
 \end{algorithm}
 
-Assuming optimality, agent $A^*$ would provide solutions $y_a$ that uniformly randomise over the space of properties accessible through $D$, assuming $Y$ must contain properties in $P$. Property $p$ is sampled from a reference output $y_{ref}$ to avoid trivial policies where $D$ is over-represented by noisy properties in $y_a$.
+We denote the outcome of a single game by $\text{APG}_{A,B,C,D}(x): X \to \{-1, 0, 1\}$, which returns $1$ if $A$ wins, $-1$ if $B$ wins, and $0$ for a tie. We may also define an alternative version of the game $\text{APG}_{A,B,C,D}(x, y_a): X \times Y \to \{-1, 0, 1\}$ in which $y_a$ is given beforehand instead of being sampled directly from $A$.
+
+Property $p$ is sampled from a reference output $y_{ref}$ rather than from $y_a$ directly, ensuring properties are representative of $A$'s policy rather than idiosyncratic features of individual samples.
+An additional case is added when neither $A$ nor $B$ manage to obtain a substantial reward $R$ by considering this a tie.
+Assuming optimality, agent $A^*$ would provide solutions $y_a$ that uniformly randomise over the space of properties accessible through $D$.  
 % \paragraph{Algorithm} %TODO: maybe we want this to be a figure
 % \begin{enumerate}
 %     \item Given an initial state $s\in\mathcal{S}$.
@@ -52,76 +66,99 @@ Assuming optimality, agent $A^*$ would provide solutions $y_a$ that uniformly ra
 
 \subsection{Application as mitigation}
 
-Note that a large language model $\pi_\theta$ (with parameters $\theta$) maps prompts to possible completions. Formally, for all prompts $pr \in \Sigma^*$, $\pi_\theta(\cdot \mid pr)$ is a probability distribution over possible completions. 
+% Note that a large language model $\pi_\theta$ (with parameters $\theta$) maps prompts to possible completions. Formally, for all prompts $pr \in \Sigma^*$, $\pi_\theta(\cdot \mid pr)$ is a probability distribution over possible completions. 
 
 %The mitigation is a zero-sum game but the rewards do not sum to zero
 
-The above two player game can be defined for language models in a training environment. 
+% The above two player game can be defined for language models in a training environment.
+% In this case, $A$ is represented by our model organism $\pi_\theta(y|x)$, while $B$ is represented by another LLM $\pi_\phi(y|x, p)$. To create our distribution over properties and classifier, we use another set of LLMs $\pi_\psi(p|x, y)$ and $\pi_\omega({0,1}|y,p)$. While our classifier remains fixed throughout training, all other policies are updated towards obtaining a better outcome in the game. Importantly, $A$ is updated based on the outcome of the game, while $B$ is updated based on the negative of the outcome. 
+%%%% TODO: Next sentece: That is, that it reflects the distribution over properties contained in A. %%%% Add this in a cohesive way
+% While in a single turn of the game we assume a static, perfect distribution over properties $D$, we approximate such a distribution by updating $\pi_\psi$ based on $B$'s outcome. 
 
-We implement the two players as large language models:
-\begin{itemize}
-    \item  $A$ as LLM  $\pi_\theta: \Sigma^* \to \Delta(\Sigma^*)$ with parameters $\theta$, and
-    \item $B$ as LLM  $\mu_\phi: \Sigma^* \to \Delta(\Sigma^*)$ with parameters $\phi$.
-\end{itemize}
-We preprocess the outputs of these models to ensure that they are in the specified format. Specifically, we apply a code cleaning function $cc: \Sigma^* \to Y$, which maps arbitrary strings to Python code\footnote{Note that the cleaned output is not guaranteed to be a non-empty. Similarly, the code might contain syntax errors.}. Note that the prompt to $\pi_\theta$ includes only problem $x$, while the prompt to $\mu_\phi$ includes both problem $x$ and property $p$.
+The Adversarial Property Game can be instantiated for language models in a training environment. In this setting, $X$ represents the space of initial states, and $Y$ represents the spaces of completions up to trajectory length $T$. Agent $A$ is represented by our target model $\pi_\theta(y|x)$, while agent $B$ is represented by an adversarial LLM $\pi_\phi(y|x,p)$. We implement the property distribution $D$ and classifier $C$ using two additional LLMs: a property selector $\pi_\psi(p|x,y)$ and a fixed classifier $\pi_\omega(\{0,1\}|y,p)$. We therefore implement our game as a mitigation strategy as follows:
 
-We also implement $C$ and $D$ as large language models:
-\begin{itemize}
-    \item $C$ as LLM $\nu_\psi: \Sigma^* \to \Delta(\Sigma^*)$ with parameters $\psi$, and
-    \item $D$ as LLM $\eta_\omega: \Sigma^* \to \Delta(\Sigma^*)$ with parameters $\omega$.
-\end{itemize}
-Note that the prompt to $\nu_\psi$ contains a solution $y$ and property $p$ and the prompt to $\eta_\omega$ contains problem $x \in X$ and solution $y$.
+\begin{equation}
+R_{mit} = \alpha \text{APG}_{\pi_\theta, \pi_\phi, \pi_\omega, \pi_\psi}(x, y_{\pi_\theta})
+\end{equation}
 
-- define training (from alices perspective) as $R_mit = \alpha \times game results$, where $\alpha$ is a coefficient. 
+Where $\alpha$ is a regularization hyperparameter. During training, the target model $\pi_\theta$ is updated to maximize this regularized reward, while the adversarial policies $\pi_\phi$ and $\pi_\psi$ are updated to minimize the game outcome:
 
-\begin{algorithm}\label{alg:train}
-\caption{Training loop with the Adversarial Property Game}
-\begin{algorithmic}[1]
-\Require  Initial $A$, $B$ and $D$, implemented by $\pi_{\theta_0}$, $\mu_{\phi_0}$ and $\eta_{\omega_t}$; $C$ implemented by $\nu_\psi$; the maximum iteration $T$.
-\For{$t = 1, ..., T$}
-    \State Play the Adversarial Property Game
-    \If{$A$ wins the game}
-        \State $w \gets 1$
-    \Else
-        \State $w \gets -1$
-    \EndIf
-    \State \textbf{Policy Update:}
-    \begin{equation*}
-        \pi_{\theta_t} \gets \argmax_{\pi_\theta} \mathbb{E}_{\mu_{\phi_{t-1}}, \eta_{\omega_{t-1}}} \left[  \mathbb{E}_{\pi_\theta} \left[\sum^T_{t=0}\gamma^t R_A(s_t, a_t) + R_{\mathrm{mit}}\right] \right]
-    \end{equation*}
-    \begin{equation*}
-        \mu_{\phi_t} \gets \argmax_{\pi_\theta} \mathbb{E}_\pi \left[\sum^T_{t=0}\gamma^t r_A(s_t, a_t) + R_{\mathrm{mit}}\right]
-    \end{equation*}
-\EndFor
-\Return $\pi_{\theta_T}$, $\mu_{\phi_T}$, $\eta_{\omega_T}$
-\end{algorithmic}
-\end{algorithm}
-Note that $C$ remains unchanged throughout the training. %TODO why?
+\begin{equation}
+\phi \gets \arg\max_{\phi} \mathbb{E}_{x \sim X} [-\text{APG}_{\pi_\theta, \pi_\phi, \pi_\omega, \pi_\psi}(x,  y_{\pi_\theta})]
+\end{equation}
+\begin{equation}
+\psi \gets \arg\max_{\psi} \mathbb{E}_{x \sim X} [-\text{APG}_{\pi_\theta, \pi_\phi, \pi_\omega, \pi_\psi}(x,  y_{\pi_\theta})]
+\end{equation}
 
-- in order to optimise towards the Nash equilibria? we perform training by alternating between freezing alice and bob
+The classifier remains static throughout the training procedure. The property selector $\pi_\psi$, aligned with $B$, learns to identify exploitable properties in $A$'s outputs: properties that can be removed while maintaining reward. Thus, while a single game assumes a static distribution $D$, during training $\pi_\psi$ actively learns to target $A$'s vulnerabilities, creating adaptive adversarial pressure that forces $\pi_\theta$ to avoid persistent optimization for any identifiable property.
 
-- this allows bob to improve his distribution over classifiers
+% We implement the two players as large language models:
+% \begin{itemize}
+%     \item  $A$ as LLM  $\pi_\theta: \Sigma^* \to \Delta(\Sigma^*)$ with parameters $\theta$, and
+%     \item $B$ as LLM  $\mu_\phi: \Sigma^* \to \Delta(\Sigma^*)$ with parameters $\phi$.
+% \end{itemize}
+% We preprocess the outputs of these models to ensure that they are in the specified format. 
+% Specifically, we apply a code cleaning function $cc: \Sigma^* \to Y$, which maps arbitrary strings to Python code\footnote{Note that the cleaned output is not guaranteed to be a non-empty. Similarly, the code might contain syntax errors.}. 
+% Note that the prompt to $\pi_\theta$ includes only problem $x$, while the prompt to $\mu_\phi$ includes both problem $x$ and property $p$.
+% 
+% We also implement $C$ and $D$ as large language models:
+% \begin{itemize}
+%     \item $C$ as LLM $\nu_\psi: \Sigma^* \to \Delta(\Sigma^*)$ with parameters $\psi$, and
+%     \item $D$ as LLM $\eta_\omega: \Sigma^* \to \Delta(\Sigma^*)$ with parameters $\omega$.
+% \end{itemize}
+% Note that the prompt to $\nu_\psi$ contains a solution $y$ and property $p$ and the prompt to $\eta_\omega$ contains problem $x \in X$ and solution $y$.
+% 
+% - define training (from alices perspective) as $R_mit = \alpha \times game results$, where $\alpha$ is a coefficient. 
 
-- in response alice updates her outputs to not include the particular properties
+% \begin{algorithm}\label{alg:train}
+% \caption{Training loop with the Adversarial Property Game}
+% \begin{algorithmic}[1]
+% \Require  Initial $A$, $B$ and $D$, implemented by $\pi_{\theta_0}$, $\mu_{\phi_0}$ and $\eta_{\omega_t}$; $C$ implemented by $\nu_\psi$; the maximum iteration $T$.
+% \For{$t = 1, ..., T$}
+%     \State Play the Adversarial Property Game
+%     \If{$A$ wins the game}
+%         \State $w \gets 1$
+%     \Else
+%         \State $w \gets -1$
+%     \EndIf
+%     \State \textbf{Policy Update:}
+%     \begin{equation*}
+%         \pi_{\theta_t} \gets \argmax_{\pi_\theta} \mathbb{E}_{\mu_{\phi_{t-1}}, \eta_{\omega_{t-1}}} \left[  \mathbb{E}_{\pi_\theta} \left[\sum^T_{t=0}\gamma^t R_A(s_t, a_t) + R_{\mathrm{mit}}\right] \right]
+%     \end{equation*}
+%     \begin{equation*}
+%         \mu_{\phi_t} \gets \argmax_{\pi_\theta} \mathbb{E}_\pi \left[\sum^T_{t=0}\gamma^t r_A(s_t, a_t) + R_{\mathrm{mit}}\right]
+%     \end{equation*}
+% \EndFor
+% \Return $\pi_{\theta_T}$, $\mu_{\phi_T}$, $\eta_{\omega_T}$
+% \end{algorithmic}
+% \end{algorithm}
 
-In the case of unexploitable search we can consider the game 
-A two-player zero-sum game is a type of normal-form game in which the sum of the agents' rewards is always 0, with the reward of one agent being the negative of the other agent's reward: $R_A = -R_B$.
-Given two policies, ${\pi}_\mathit{A}(a|s)$ and ${\pi}_\mathit{B}(a|s)$ for our two players denoted Alice and Bob respectively, a trajectory space $\mathcal{T}_{\pi} = (\mathcal{S} \times\mathcal{A})^T$ representing all possible trajectories with a horizon $T$ given policy $\pi$, a reward function $R:\mathcal{T}\to[0, 1]$ that maps trajectories to a scalar reward, and a distribution over classifiers $D_\mathit{B}(c|\tau)$ from which classifiers of the form $C: \mathcal{T} \to \{0, 1\}$ can be sampled given a trajectory, our game is defined in the following way.
-
-
-Winning yields a positive payoff and losing a negative one, which in turn drive weight updates in the respective models.
-
-Outline:
-
-input space X is prompts output space Y is completions
-
-bob is 
-
-- add mention of how this is added as a term to $R_mit$
-
-lambda times game result $R(game)$
-
-We apply the two sum game as a mitigation to 
+% Note that $C$ remains unchanged throughout the training. %TODO why?
+% 
+% - in order to optimise towards the Nash equilibria? we perform training by alternating between freezing alice and bob
+% 
+% - this allows bob to improve his distribution over classifiers
+% 
+% - in response alice updates her outputs to not include the particular properties
+% 
+% In the case of unexploitable search we can consider the game 
+% A two-player zero-sum game is a type of normal-form game in which the sum of the agents' rewards is always 0, with the reward of one agent being the negative of the other agent's reward: $R_A = -R_B$.
+% Given two policies, ${\pi}_\mathit{A}(a|s)$ and ${\pi}_\mathit{B}(a|s)$ for our two players denoted Alice and Bob respectively, a trajectory space $\mathcal{T}_{\pi} = (\mathcal{S} \times\mathcal{A})^T$ representing all possible trajectories with a horizon $T$ given policy $\pi$, a reward function $R:\mathcal{T}\to[0, 1]$ that maps trajectories to a scalar reward, and a distribution over classifiers $D_\mathit{B}(c|\tau)$ from which classifiers of the form $C: \mathcal{T} \to \{0, 1\}$ can be sampled given a trajectory, our game is defined in the following way.
+% 
+% 
+% Winning yields a positive payoff and losing a negative one, which in turn drive weight updates in the respective models.
+% 
+% Outline:
+% 
+% input space X is prompts output space Y is completions
+% 
+% bob is 
+% 
+% - add mention of how this is added as a term to $R_mit$
+% 
+% lambda times game result $R(game)$
+% 
+% We apply the two sum game as a mitigation to 
 
 % \subsection{Extra points}
 % 

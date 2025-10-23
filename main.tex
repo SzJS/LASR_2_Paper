@@ -39,8 +39,8 @@
 % For workshops (5., 6.), the authors should add the name of the workshop, "\workshoptitle" command is used to set the workshop title.
 % \workshoptitle{WORKSHOP TITLE}
 
-% "preprint" option is used for arXiv or other preprint submissions
- % \usepackage[preprint]{neurips_2025}
+%"preprint" option is used for arXiv or other preprint submissions
+\usepackage[preprint]{neurips_2025}
 
 % to avoid loading the natbib package, add option nonatbib:
 %    \usepackage[nonatbib]{neurips_2025}
@@ -59,12 +59,14 @@
 \usepackage{amsmath}        % mathematical formatting
 \usepackage{algorithm}      % pseudocode formatting
 \usepackage{algpseudocode}  % pseudocode formatting
+\usepackage{tikz}           % tikz figures
 
 \definecolor{barbiepink}{RGB}{240, 105, 184}
 \usepackage[color=barbiepink]{todonotes}
 
 % Added by us
 \usepackage{amsthm}
+\usepackage{mathtools}
 \usepackage{listings}
 \lstset{
     basicstyle=\ttfamily\small,
@@ -83,9 +85,7 @@
 
 
 % Note. For the workshop paper template, both \title{} and \workshoptitle{} are required, with the former indicating the paper title shown in the title and the latter indicating the workshop title displayed in the footnote. 
-%\title{Underdeterminacy Exploitation: \\Model Organisms and Mitigations}
-\title{✨Reward-Compatible Misalignment✨}
-
+\title{Reward-Compatible Misalignment: \\ Model Organisms and Mitigations}
 
 % The \author macro works with any number of authors. There are two commands
 % used to separate the names and addresses of multiple authors: \And and \AND.
@@ -148,16 +148,10 @@
 % \end{abstract}
 
 \begin{abstract}
-Artificial intelligence systems can be used to complete tasks that have multiple correct solutions, such as code generation.
-A misaligned system could exploit such underdeterminacy by pursuing some malicious objective while completing the task specified by its user.
-For example, a system could complete a programming task to the satisfaction of its user, while intentionally introducing a subtle vulnerability.
-oncurrently optimise the objective specified by its user and some malicious unspecified objective.
-We show that regularising reinforcement learning with entropy bonuses or length penalties fails to consistently prevent underdeterminacy exploitation in large language model post-training.
-We propose a novel approach to suppressing optimisation of unspecified objectives during reinforcement learning that uses a game between a potentially misaligned agent and a critic that identifies superfluous regularities in the solutions produced by the system.
-
-\todo{talk about experiments with game, once we have them}
-
-
+AI systems can be used to solve tasks with many valid solutions. A capable and misaligned system could exploit the open-endedness of such tasks to pursue some malicious objective, while completing a task to the satisfaction of its user.
+For example, a system could complete a programming task that passes unit tests but introduces a subtle security vulnerability.
+We investigate whether existing regularisation methods for reinforcement learning post-training on large language models can suppressing malicious side objectives,
+and propose a novel approach to suppressing optimisation of side objectives during reinforcement learning post-training that uses a game between a potentially misaligned system and a critic that identifies superfluous regularities in the solutions produced by the system.
 \end{abstract}
 
 \input{introduction}
