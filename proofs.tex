@@ -4,6 +4,8 @@
 %TODO in general, I'm not sure about the notation used here - I need to check it to make sure that it works
 %TODO say this: we assume that there exists at least one reward-maximizing solution that doesn't satisfy p
 %+ define properties as powersets of Y; assume D only chooses properties that are powersets of Y_{R, x}
+%TODO I think I made some mistakes conflating Y with Y_{R, x} -> fix this!
+%TODO relate this to the benign policy -> the uniform distribution is the benign policy; maybe use that langauge?
 
 Here, we assume that both $A$ and $B$ can always produce outputs that maximise the reward. Denote by $Y_{R, x}$ (where $Y_{R, x} \subseteq Y$) the set of solutions that maximise reward $R$ given input $x$. That is, for all $y \in Y$ and for all $y^* \in Y_{R, x}$, $R(x, y) \le R(x, y^*)$. And so, for all inputs $x$, for all outputs $y_a \sim A(x)$, we assume $y_a$ maximises reward, i.e. $y_a \in Y_{R, x}$. Similarly, for all $x$, for all properties $p$, for all outputs $y_b \sim B(x, p)$, we assume $R(x, y_b)$ maximises reward, i.e. $y_b \in Y_{R, x}$.
 
@@ -96,17 +98,16 @@ Therefore, in all Nash equilibria, $S_D$ is equal to $P^*_D$.
 
 
 %TODO show that unless A randomises, D has a best response resulting in a lower reward
+We now show that in any Nash equilibrium, $A$'s strategy must be $P^*_A$. We do this by contradiction. Assume $P_A \ne P^*_A$. Fix $x$. Then there must be $y$ such that $P_A(y \mid x) < \frac{1}{|Y_{R, x}|}$ and $P_A(y \mid x) = \min_{y'} P_A(y' \mid x)$. Let $p$ be such that $Y_{\neg p} = \{y\}$. Moreover, let $P_D$ be such that $P_D(p \mid x) = 1$ (and $0$ otherwise). Then $A$ will win iff $y' \sim P_A$  and will lose otherwise.  That is, $A$ has a probability of winning equal to $P_A(y \mid x)$ and so $u_A(S) < 2 - \frac{1}{|Y_{R, x}|}$. %TODO explain what S is here
+And therefore, $P_A$ cannot be a part of any Nash equilibrium.
 
-
-% We do this by demonstrating that $D$'s maximal reward for any non-uniform $P_A \ne P^*_A$ is higher than $D$'s reward for uniform $P^*_A$. Therefore, by Equation \ref{eq:minimax}, $P^*_A$ must be $A$'s strategy in any Nash equilibria.
-
-
-%TODO show if A uses a uniform strategy, the best strategy of D is also a uniform strategy
+Consequently, the only unique Nash equilibrium is $S^*$.
 \end{proof}
 
-\begin{theorem} \label{thm:ipm}
-[TODO]%This one will prove that the unique Nash equilibrium satisfies IPM for the set $F$. I think the set $F$ will relate somehow to $P$.
-\end{theorem}
-\begin{proof}
-[TODO]
-\end{proof}
+%TODO figure out if we need the below (but it really should be more of a corollary)
+% \begin{theorem} \label{thm:ipm}
+% [TODO]%This one will prove that the unique Nash equilibrium satisfies IPM for the set $F$. I think the set $F$ will relate somehow to $P$.
+% \end{theorem}
+% \begin{proof}
+% [TODO]
+% \end{proof}

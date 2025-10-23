@@ -6,13 +6,11 @@ Inspired by adversarial setups, we investigate a novel method for addressing rew
  
 % \subsection{Two-player zero sum game}
 
-More formally, our two player zero-sum game proceeds as follows. Agent $A$ produces an output $y_a$ and a reference output $y_{ref}$ for a given input $x$, aiming to maximize reward from $r$. 
-Agent $B$ is given access to a distribution over properties $D: X \times Y \to \Delta P$ and a indicator function $I: Y \times P \to \{0,1\}$ that indicates the existence of a property $p$ in output $y$.
-Agent $B$, having access to a property $p$ sampled from $D(x,y_{ref})$, produces an alternative output $y_b$ without property $p$. $B$ wins the game when the property is present in $y_a$ (i.e. $I(y_a,p)=1$) but absent in $y_b$ (i.e. $I(y_b,p)=0$), while $y_b$ obtains similar or better reward on $r$.
+More formally, our two player zero-sum game proceeds as follows. Agent $A$ produces an output $y_a$ and a reference output $y_\mathrm{ref}$ for a given input $x$, aiming to maximize reward from $r$. 
+Agent $B$ is given access to a distribution over properties $C: X \times Y \to \Delta P$ and a indicator function $I: Y \times P \to \{0,1\}$ that indicates the existence of a property $p$ in output $y$.
+Agent $B$, having access to a property $p$ sampled from $C(x,y_\mathrm{ref})$, produces an alternative output $y_b$ without property $p$. $B$ wins the game when the property is present in $y_a$ (i.e. $I(y_a,p)=1$) but absent in $y_b$ (i.e. $I(y_b,p)=0$), while $y_b$ obtains similar or better reward on $r$.
 
 % - replace D dist by C
-
-% - replace C indicator by I
 
 %This new agent aims to generate alternative outputs $y_{b}$ that obtain similar rewards to $A$'s solution $y_{a}$ while lacking a given undesired property $p$ from the space of properties $P$. To do so, $B$ has access to a distribution over properties $D: X \times Y \to P$ and a classifier function $C: Y\times P  \to \{0, 1\}$ that indicates the existence of property $p$ in $y$. $B$, having access to the sampled property $p$, wins the game when the property is present in $y_a$ while also lacking from $y_b$ and obtaining a similar or better reward from $R$.
 
@@ -22,17 +20,17 @@ Agent $B$, having access to a property $p$ sampled from $D(x,y_{ref})$, produces
 \begin{algorithm}\label{alg:apg}
 \caption{The Adversarial Property Game: Single game pseudocode}
 \begin{algorithmic}[1]
-\State Initialize $A$, $B$, $D$
+\State Initialize $A$, $B$, $C$
 \State Sample $x \sim X$
 \State $A$ samples an output $y_a \sim A(x)$
-\State $A$ samples a reference output $y_{ref} \sim A(x)$
-\State Sample a property $p \sim D(x, y_{ref})$
+\State $A$ samples a reference output $y_\mathrm{ref} \sim A(x)$
+\State Sample a property $p \sim C(x, y_\mathrm{ref})$
 \State $B$ samples an output $y_b \sim B(x, p)$
 \If{$I(y_a, p) = 0$}
     \State \Return $1$ \Comment{$A$ wins}
 \ElsIf{$I(y_b, p) = 1$}
     \State \Return $1$ \Comment{$A$ wins}
-\ElsIf{$r(x, y_a) < \epsilon$ \And  $r(x, y_b) < \epsilon$}
+\ElsIf{$r(x, y_a) < \epsilon$ \textbf{and} $r(x, y_b) < \epsilon$}
     \State \Return $0$ \Comment{Tie}
 \ElsIf{$r(x, y_a) > r(x, y_b) + \epsilon$}
     \State \Return $1$ \Comment{$A$ wins}
@@ -42,11 +40,11 @@ Agent $B$, having access to a property $p$ sampled from $D(x,y_{ref})$, produces
 \end{algorithmic}
 \end{algorithm}
 
-We denote the outcome of a single game by $\text{APG}_{A,B,C,D}(x): X \to \{-1, 0, 1\}$, which returns $1$ if $A$ wins, $-1$ if $B$ wins, and $0$ for a tie. We may also define an alternative version of the game $\text{APG}_{A,B,C,D}(x, y_a): X \times Y \to \{-1, 0, 1\}$ in which $y_a$ is given beforehand instead of being sampled directly from $A$.
+We denote the outcome of a single game by $\text{APG}_{A,B,I,C}(x): X \to \{-1, 0, 1\}$, which returns $1$ if $A$ wins, $-1$ if $B$ wins, and $0$ for a tie. We may also define an alternative version of the game $\text{APG}_{A,B,I,C}(x, y_a): X \times Y \to \{-1, 0, 1\}$ in which $y_a$ is given beforehand instead of being sampled directly from $A$.
 
-Property $p$ is sampled from a reference output $y_{ref}$ rather than from $y_a$ directly, ensuring properties are representative of $A$'s policy rather than idiosyncratic features of individual samples.
-An additional case is added when neither $A$ nor $B$ manage to obtain a substantial reward $R$ by considering this a tie.
-Assuming optimality, agent $A^*$ would provide solutions $y_a$ that uniformly randomise over the space of properties accessible through $D$.  
+Property $p$ is sampled from a reference output $y_\mathrm{ref}$ rather than from $y_a$ directly, ensuring properties are representative of $A$'s policy rather than idiosyncratic features of individual samples.
+An additional case is added when neither $A$ nor $B$ manage to obtain a substantial reward $r$ by considering this a tie.
+Assuming optimality, agent $A^*$ would provide solutions $y_a$ that uniformly randomise over the space of properties accessible through $C$.  
 % \paragraph{Algorithm} %TODO: maybe we want this to be a figure
 % \begin{enumerate}
 %     \item Given an initial state $s\in\mathcal{S}$.
@@ -75,7 +73,7 @@ Assuming optimality, agent $A^*$ would provide solutions $y_a$ that uniformly ra
 %%%% TODO: Next sentece: That is, that it reflects the distribution over properties contained in A. %%%% Add this in a cohesive way
 % While in a single turn of the game we assume a static, perfect distribution over properties $D$, we approximate such a distribution by updating $\pi_\psi$ based on $B$'s outcome. 
 
-The Adversarial Property Game can be instantiated for language models in a training environment. In this setting, $X$ represents the space of initial states, and $Y$ represents the spaces of completions up to trajectory length $T$. Agent $A$ is represented by our target model $\pi_\theta(y|x)$, while agent $B$ is represented by an adversarial LLM $\pi_\phi(y|x,p)$. We implement the property distribution $D$ and classifier $C$ using two additional LLMs: a property selector $\pi_\psi(p|x,y)$ and a fixed classifier $\pi_\omega(\{0,1\}|y,p)$. We therefore implement our game as a mitigation strategy as follows:
+The Adversarial Property Game can be instantiated for language models in a training environment. In this setting, $X$ represents the space of initial states, and $Y$ represents the spaces of completions up to trajectory length $T$. Agent $A$ is represented by our target model $\pi_\theta(y|x)$, while agent $B$ is represented by an adversarial LLM $\pi_\phi(y|x,p)$. We implement the property distribution $C$ and indicator $I$ using two additional LLMs: a property selector $\pi_\psi(p|x,y)$ and a fixed classifier $\pi_\omega(\{0,1\}|y,p)$. We therefore implement our game as a mitigation strategy as follows:
 
 \begin{equation}
 R_{mit} = \alpha \text{APG}_{\pi_\theta, \pi_\phi, \pi_\omega, \pi_\psi}(x, y_{\pi_\theta})
@@ -90,7 +88,7 @@ Where $\alpha$ is a regularization hyperparameter. During training, the target m
 \psi \gets \arg\max_{\psi} \mathbb{E}_{x \sim X} [-\text{APG}_{\pi_\theta, \pi_\phi, \pi_\omega, \pi_\psi}(x,  y_{\pi_\theta})]
 \end{equation}
 
-The classifier remains static throughout the training procedure. The property selector $\pi_\psi$, aligned with $B$, learns to identify exploitable properties in $A$'s outputs: properties that can be removed while maintaining reward. Thus, while a single game assumes a static distribution $D$, during training $\pi_\psi$ actively learns to target $A$'s vulnerabilities, creating adaptive adversarial pressure that forces $\pi_\theta$ to avoid persistent optimization for any identifiable property.
+The classifier remains static throughout the training procedure. The property selector $\pi_\psi$, aligned with $B$, learns to identify exploitable properties in $A$'s outputs: properties that can be removed while maintaining reward. Thus, while a single game assumes a static distribution $C$, during training $\pi_\psi$ actively learns to target $A$'s vulnerabilities, creating adaptive adversarial pressure that forces $\pi_\theta$ to avoid persistent optimization for any identifiable property.
 
 % We implement the two players as large language models:
 % \begin{itemize}
